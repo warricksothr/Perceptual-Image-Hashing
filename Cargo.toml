@@ -1,0 +1,4 @@
+[package]
+name = "Perceptual-Image-Hashing"
+version = "0.1.0"
+authors = ["Drew Short <warrick@sothr.com>"]
