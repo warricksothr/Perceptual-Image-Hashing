@@ -2,11 +2,3 @@
 //
 // Licensed under the MIT license<LICENSE-MIT or http://opensource.org/licenses/MIT>.
 // This file may not be copied, modified, or distributed except according to those terms.
-
-extern crate perceptual_image_hashing;
-
-fn main() {
-    let mut string = String::new();
-    string = perceptual_image_hashing::hello(string);
-    println!("{}",string);
-}

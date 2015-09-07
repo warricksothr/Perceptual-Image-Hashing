@@ -1,4 +1,4 @@
 [package]
-name = "Perceptual-Image-Hashing"
+name = "perceptual_image_hashing"
 version = "0.1.0"
 authors = ["Drew Short <warrick@sothr.com>"]
