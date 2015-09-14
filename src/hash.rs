@@ -47,11 +47,11 @@ pub fn calculate_hamming_distance(hash1: u64, hash2: u64) -> u64 {
 }
 
 /**
- * Calculate the ahash of an image provided at the indicated path.
+ * Calculate the ahash of the provided prepared image.
  *
  * # Arguments
  *
- * * 'path' - The path to the image file to create a hash from.
+ * * 'prepared_image' - The already prepared image for perceptual processing.
  *
  * Returns a u64 representing the value of the hash
  */
@@ -86,4 +86,34 @@ pub fn get_ahash(prepared_image: PreparedImage) -> u64 {
     //println!("Hash for {} is {}", prepared_image.orig_path, hash);
 
     return hash;
+}
+
+/**
+ * Calculate the dhash of the provided prepared image
+ *
+ * # Arguments
+ *
+ * * 'prepared_image' - The already prepared image for perceptual processing
+ *
+ * # Return
+ *
+ * Returns a u64 representing the value of the hash
+ */
+pub fn get_dhash(prepared_image: PreparedImage) -> u64 {
+
+}
+
+/**
+ * Calculate the phash of the provided prepared image
+ *
+ * # Arguments
+ *
+ * * 'prepared_image' - The already prepared image for perceptual processing
+ *
+ * # Return
+ *
+ * Returns a u64 representing the value of the hash
+ */
+pub fn get_phash(prepared_image: PreparedImage) -> u64 {
+
 }
