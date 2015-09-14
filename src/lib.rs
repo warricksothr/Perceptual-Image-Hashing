@@ -24,11 +24,24 @@ mod tests {
         let paths = fs::read_dir(&path::Path::new("./test_images")).unwrap();
         let mut num_paths = 0;
         for path in paths {
-            num_paths += 1;
+            let orig_path = path.unwrap().path();
+            let ext = path::Path::new(&orig_path).extension();
+            match ext {
+                Some(_) => { 
+                    if ext.unwrap() == "jpg" {
+                        println!("Is a image {}: {:?}", num_paths, orig_path) ;
+                        num_paths += 1;
+                    }
+                },
+                _ => {
+                    println!("Not an image: {:?}", orig_path) ;
+                    continue
+                }
+            }
             //println!("Name: {}", path.unwrap().path().display())
         }
-        // Currently 13 files in the test imaages directory
-        assert!(num_paths >= 13);
+        // Currently 12 images in the test imaages directory
+        assert!(num_paths == 12);
     }
 
 }
