@@ -7,8 +7,21 @@
 mod hash;
 
 pub fn hello(mut result: String) -> String {
-    let helloworld = "Hello, World!";
+    let helloworld = "Hello, World!\n";
     result.push_str(helloworld);
+    let n = 1u8;
+    let ns = format!("1: {:b}\n", n);
+    let n2 = 2u8;
+    let n2s = format!("2: {:b}\n", n2);
+    result.push_str(&ns);
+    result.push_str(&n2s);
+    let mut endian = "Big Endian\n";
+    if cfg!(target_endian = "big") {
+        result.push_str(endian);
+    } else {
+        endian = "Little Endian\n";
+        result.push_str(endian);
+    }
     result
 }
 
@@ -61,9 +74,9 @@ mod tests {
         expected_large_small_hamming: u64,
         expected_medium_small_hamming: u64) {
         
-        let large_prepared_image = hash::prepare_image(path::Path::new(large_path));
-        let medium_prepared_image = hash::prepare_image(path::Path::new(medium_path));
-        let small_prepared_image = hash::prepare_image(path::Path::new(small_path));
+        let large_prepared_image = hash::prepare_image(path::Path::new(large_path), 8u32);
+        let medium_prepared_image = hash::prepare_image(path::Path::new(medium_path), 8u32);
+        let small_prepared_image = hash::prepare_image(path::Path::new(small_path), 8u32);
         
         let large_ahash = hash::get_ahash(large_prepared_image);
         let medium_ahash = hash::get_ahash(medium_prepared_image);
@@ -98,12 +111,50 @@ mod tests {
             "./test_images/sample_01_large.jpg",
             "./test_images/sample_01_medium.jpg",
             "./test_images/sample_01_small.jpg",
-            18446744073709551615u64,
-            18446744073709551615u64,
-            9223372036854775807u64,
+            857051991849750,
+            857051991849750,
+            857051991849750,
             0u64,
-            1u64,
-            1u64
+            0u64,
+            0u64
+        );
+        
+        // Sample_02 tests
+        test_image_set_ahash(
+            "./test_images/sample_02_large.jpg",
+            "./test_images/sample_02_medium.jpg",
+            "./test_images/sample_02_small.jpg",
+            18446744073441116160,
+            18446744073441116160,
+            18446744073441116160,
+            0u64,
+            0u64,
+            0u64
+        );
+        // Sample_03 tests
+        test_image_set_ahash(
+            "./test_images/sample_03_large.jpg",
+            "./test_images/sample_03_medium.jpg",
+            "./test_images/sample_03_small.jpg",
+            135670932300497406,
+            135670932300497406,
+            135670932300497406,
+            0u64,
+            0u64,
+            0u64
+        );
+        
+        // Sample_04 tests
+        test_image_set_ahash(
+            "./test_images/sample_04_large.jpg",
+            "./test_images/sample_04_medium.jpg",
+            "./test_images/sample_04_small.jpg",
+            18446460933225054208,
+            18446460933225054208,
+            18446460933225054208,
+            0u64,
+            0u64,
+            0u64
         );
     }
 

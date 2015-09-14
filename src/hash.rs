@@ -9,18 +9,22 @@ extern crate image;
 use std::path::Path;
 use self::image::{
     GenericImage,
-    Pixel
+    Pixel,
+    FilterType
 };
+use self::image::imageops;
 
 pub struct PreparedImage<'a> {
     orig_path: &'a str,
-    grey_image: image::ImageBuffer<image::Luma<u8>,Vec<u8>>
+    image: image::ImageBuffer<image::Luma<u8>,Vec<u8>>
 }
 
-pub fn prepare_image(path: &Path) -> PreparedImage {
-    let grey_img = image::open(path).unwrap().to_luma();
+pub fn prepare_image(path: &Path, size: u32) -> PreparedImage {
     let image_path = path.to_str().unwrap();
-    PreparedImage { orig_path: &*image_path, grey_image: grey_img }
+    let image = image::open(path).unwrap();
+    let small_image = image.resize_exact(size, size, image::FilterType::Lanczos3);
+    let grey_image = small_image.to_luma();
+    PreparedImage { orig_path: &*image_path, image: grey_image }
 }
 
 /*
@@ -52,29 +56,34 @@ pub fn calculate_hamming_distance(hash1: u64, hash2: u64) -> u64 {
  * Returns a u64 representing the value of the hash
  */
 pub fn get_ahash(prepared_image: PreparedImage) -> u64 {
-    let img = prepared_image.grey_image;
+    let img = prepared_image.image;
     let (width, height) = img.dimensions();
-    
+
     // calculating the average pixel value
     let mut total = 0u64;
     for pixel in img.pixels() {
         let channels = pixel.channels();
+        //println!("Pixel is: {}", channels[0]);
         total += channels[0] as u64;
     }
     let mean = total / (width*height) as u64;
-    
+    //println!("Mean for {} is {}", prepared_image.orig_path, mean);
+
     // Calculating a hash based on the mean
     let mut hash = 0u64;
     for pixel in img.pixels() {
         let channels = pixel.channels();
         let pixel_sum = channels[0] as u64;
-        hash <<= 1;
         if pixel_sum >= mean {
             hash |= 1;
+            //println!("Pixel {} is >= {} therefore {:b}", pixel_sum, mean, hash);
         } else {
             hash |= 0;
+            //println!("Pixel {} is < {} therefore {:b}", pixel_sum, mean, hash);
         }
+        hash <<= 1;
     }
+    //println!("Hash for {} is {}", prepared_image.orig_path, hash);
 
     return hash;
 }
