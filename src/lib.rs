@@ -8,3 +8,27 @@ pub fn hello(mut result: String) -> String {
     result.push_str(helloworld);
     result
 }
+
+/*
+ * Module for the tests
+ */
+#[cfg(test)]
+mod tests {
+
+    use super::*;
+    use std::fs;
+    use std::path;
+
+    #[test]
+    fn can_get_test_images() {
+        let paths = fs::read_dir(&path::Path::new("./test_images")).unwrap();
+        let mut num_paths = 0;
+        for path in paths {
+            num_paths += 1;
+            //println!("Name: {}", path.unwrap().path().display())
+        }
+        // Currently 13 files in the test imaages directory
+        assert!(num_paths >= 13);
+    }
+
+}

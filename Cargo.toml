@@ -1,5 +1,5 @@
 [package]
-name = "perceptual_image_hashing"
+name = "pihash"
 version = "0.1.0"
 authors = ["Drew Short <warrick@sothr.com>"]
 

@@ -3,11 +3,11 @@ All test images are Creative Commons Licensed
 This document seeks to credit the original authors where possible
 
 # Landscapes
-14095127199_e60a64e1b6_h.jpg https://m.flickr.com/#/photos/cubagallery/14095127199/in/search_QM_q_IS_landscape_AND_w_IS_commons
-15720949851_c94c8b2d54_h.jpg https://m.flickr.com/#/photos/cubagallery/15720949851/in/search_QM_q_IS_landscape_AND_w_IS_commons
-14191645299_7179d4a859_h.jpg https://m.flickr.com/#/photos/cubagallery/14191645299/in/search_QM_q_IS_landscape_AND_w_IS_commons
+14095127199_e60a64e1b6_h_{large,medium,small}.jpg https://m.flickr.com/#/photos/cubagallery/14095127199/in/search_QM_q_IS_landscape_AND_w_IS_commons
+15720949851_c94c8b2d54_h_{large,medium,small}.jpg https://m.flickr.com/#/photos/cubagallery/15720949851/in/search_QM_q_IS_landscape_AND_w_IS_commons
+14191645299_7179d4a859_h_{large,medium,small}.jpg https://m.flickr.com/#/photos/cubagallery/14191645299/in/search_QM_q_IS_landscape_AND_w_IS_commons
 
 # Faces
 
 # Miscellaneous 
-Sample_01{large,medium,small}.jpg (Creative Commons) Source Unlisted
+Sample_01_{large,medium,small}.jpg (Creative Commons) Source Unlisted
