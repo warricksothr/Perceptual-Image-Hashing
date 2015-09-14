@@ -82,9 +82,9 @@ mod tests {
         let medium_ahash = hash::get_ahash(medium_prepared_image);
         let small_ahash = hash::get_ahash(small_prepared_image);
 
-        println!("./test_images/sample_01_large.jpg: {}", large_ahash);
-        println!("./test_images/sample_01_medium.jpg: {}", medium_ahash);
-        println!("./test_images/sample_01_small.jpg: {}", small_ahash);
+        println!("{}: {}", large_path, large_ahash);
+        println!("{}: {}", medium_path, medium_ahash);
+        println!("{}: {}", small_path, small_ahash);
         
         assert!(large_ahash == expected_large_hash);
         assert!(medium_ahash == expected_medium_hash);
@@ -150,10 +150,10 @@ mod tests {
             "./test_images/sample_04_medium.jpg",
             "./test_images/sample_04_small.jpg",
             18446460933225054208,
-            18446460933225054208,
-            18446460933225054208,
-            0u64,
-            0u64,
+            18446460933090836480,
+            18446460933090836480,
+            1u64,
+            1u64,
             0u64
         );
     }
