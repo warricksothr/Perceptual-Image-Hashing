@@ -36,7 +36,7 @@ mod tests {
     use std::path;
     use hash;
 
-    //#[test]
+    #[test]
     fn can_get_test_images() {
         let paths = fs::read_dir(&path::Path::new("./test_images")).unwrap();
         let mut num_paths = 0;
@@ -107,7 +107,7 @@ mod tests {
 
     }
 
-    //#[test]
+    #[test]
     fn confirm_ahash_results() {
         // Sample_01 tests
         test_imageset_hash(
