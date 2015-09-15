@@ -6,6 +6,7 @@
 use std::path::Path;
 
 mod hash;
+mod cache;
 
 pub fn get_phashes(path: &Path) -> hash::PerceptualHashes {
     hash::get_perceptual_hashes(path, 8)
