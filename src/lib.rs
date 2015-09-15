@@ -3,6 +3,7 @@
 // Licensed under the MIT license<LICENSE-MIT or http://opensource.org/licenses/MIT>.
 // This file may not be copied, modified, or distributed except according to those terms.
 
+use std::path::Path;
 
 mod hash;
 
@@ -23,6 +24,26 @@ pub fn hello(mut result: String) -> String {
         result.push_str(endian);
     }
     result
+}
+
+pub fn get_phashes(path: &Path) -> hash::PerceptualHashes {
+    hash::get_perceptual_hashes(path, 8, 32)
+}
+
+pub fn get_ahash(path: &Path) -> u64 {
+    hash::get_ahash(&hash::prepare_image(path, 8))
+}
+
+pub fn get_dhash(path: &Path) -> u64 {
+    hash::get_dhash(&hash::prepare_image(path, 8))
+}
+
+pub fn get_phash(path: &Path) -> u64 {
+    hash::get_phash(&hash::prepare_image(path, 32))
+}
+
+pub fn get_hamming_distance(hash1: u64, hash2: u64) -> u64 {
+    hash::calculate_hamming_distance(hash1, hash2)
 }
 
 /*

@@ -12,22 +12,61 @@ use self::image::{
     Pixel,
     FilterType
 };
-use self::image::imageops;
 
+/**
+ * Prepared image that can be used to generate hashes
+ */
 pub struct PreparedImage<'a> {
     orig_path: &'a str,
     image: image::ImageBuffer<image::Luma<u8>,Vec<u8>>
 }
 
+/**
+ * Wraps the various perceptual hashes
+ */
+pub struct PerceptualHashes<'a> {
+    orig_path: &'a str,
+    ahash: u64,
+    dhash: u64,
+    phash: u64
+}
+
+/**
+ * Resonsible for parsing a path, converting an image and package it to be
+ * hashed.
+ *
+ * # Arguments
+ *
+ * * 'path' - The path to the image requested to be hashed
+ * * 'size' - The size that the image should be resize to, in the form of size x size
+ *
+ * # Returns
+ *
+ * A PreparedImage struct with the required information for performing hashing
+ *
+ */
 pub fn prepare_image(path: &Path, size: u32) -> PreparedImage {
     let image_path = path.to_str().unwrap();
     let image = image::open(path).unwrap();
-    let small_image = image.resize_exact(size, size, image::FilterType::Lanczos3);
+    let small_image = image.resize_exact(size, size, FilterType::Lanczos3);
     let grey_image = small_image.to_luma();
     PreparedImage { orig_path: &*image_path, image: grey_image }
 }
 
-/*
+/**
+ * Get all perceptual hashes for an image
+ */
+pub fn get_perceptual_hashes(path: &Path, size: u32, phash_size: u32) -> PerceptualHashes {
+    let image_path = path.to_str().unwrap();
+    let prepared_image = prepare_image(path, size);
+    let phash_prepared_image = prepare_image(path, phash_size);
+    let ahash = get_ahash(&prepared_image);
+    let dhash = get_dhash(&prepared_image);
+    let phash = get_phash(&phash_prepared_image);
+    PerceptualHashes { orig_path: &*image_path, ahash: ahash, dhash: dhash, phash: phash }
+}
+
+/**
  * Calculate the number of bits different between two hashes
  */
 pub fn calculate_hamming_distance(hash1: u64, hash2: u64) -> u64 {
@@ -53,15 +92,16 @@ pub fn calculate_hamming_distance(hash1: u64, hash2: u64) -> u64 {
  *
  * * 'prepared_image' - The already prepared image for perceptual processing.
  *
- * Returns a u64 representing the value of the hash
+ * # Returns 
+ *
+ * A u64 representing the value of the hash
  */
-pub fn get_ahash(prepared_image: PreparedImage) -> u64 {
-    let img = prepared_image.image;
-    let (width, height) = img.dimensions();
+pub fn get_ahash(prepared_image: &PreparedImage) -> u64 {
+    let (width, height) = prepared_image.image.dimensions();
 
     // calculating the average pixel value
     let mut total = 0u64;
-    for pixel in img.pixels() {
+    for pixel in prepared_image.image.pixels() {
         let channels = pixel.channels();
         //println!("Pixel is: {}", channels[0]);
         total += channels[0] as u64;
@@ -71,7 +111,7 @@ pub fn get_ahash(prepared_image: PreparedImage) -> u64 {
 
     // Calculating a hash based on the mean
     let mut hash = 0u64;
-    for pixel in img.pixels() {
+    for pixel in prepared_image.image.pixels() {
         let channels = pixel.channels();
         let pixel_sum = channels[0] as u64;
         if pixel_sum >= mean {
@@ -99,18 +139,15 @@ pub fn get_ahash(prepared_image: PreparedImage) -> u64 {
  *
  * Returns a u64 representing the value of the hash
  */
-pub fn get_dhash(prepared_image: PreparedImage) -> u64 {
-    let img = prepared_image.image;
-    let (width, height) = img.dimensions();
-
+pub fn get_dhash(prepared_image: &PreparedImage) -> u64 {
     // Stored for later
-    let first_pixel_val = img.pixels().nth(0).unwrap().channels()[0];
-    let last_pixel_val = img.pixels().last().unwrap().channels()[0];
+    let first_pixel_val = prepared_image.image.pixels().nth(0).unwrap().channels()[0];
+    let last_pixel_val = prepared_image.image.pixels().last().unwrap().channels()[0];
 
     // Calculate the dhash
     let mut previous_pixel_val = 0u64;
     let mut hash = 0u64;
-    for (index, pixel) in img.pixels().enumerate() {
+    for (index, pixel) in prepared_image.image.pixels().enumerate() {
         if index == 0 {
             previous_pixel_val = pixel.channels()[0] as u64;
             continue;
@@ -146,6 +183,6 @@ pub fn get_dhash(prepared_image: PreparedImage) -> u64 {
  *
  * Returns a u64 representing the value of the hash
  */
-pub fn get_phash(prepared_image: PreparedImage) -> u64 {
+pub fn get_phash(prepared_image: &PreparedImage) -> u64 {
     0u64
 }
