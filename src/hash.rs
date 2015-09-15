@@ -100,7 +100,39 @@ pub fn get_ahash(prepared_image: PreparedImage) -> u64 {
  * Returns a u64 representing the value of the hash
  */
 pub fn get_dhash(prepared_image: PreparedImage) -> u64 {
+    let img = prepared_image.image;
+    let (width, height) = img.dimensions();
 
+    // Stored for later
+    let first_pixel_val = img.pixels().nth(0).unwrap().channels()[0];
+    let last_pixel_val = img.pixels().last().unwrap().channels()[0];
+
+    // Calculate the dhash
+    let mut previous_pixel_val = 0u64;
+    let mut hash = 0u64;
+    for (index, pixel) in img.pixels().enumerate() {
+        if index == 0 {
+            previous_pixel_val = pixel.channels()[0] as u64;
+            continue;
+        }
+        let channels = pixel.channels();
+        let pixel_val = channels[0] as u64;
+        if pixel_val >= previous_pixel_val {
+            hash |= 1;
+        } else {
+            hash |= 0;
+        }
+        hash <<= 1;
+        previous_pixel_val = channels[0] as u64;
+    }
+
+    if first_pixel_val >= last_pixel_val {
+        hash |= 1;
+    } else {
+        hash |= 0;
+    }   
+
+    return hash;
 }
 
 /**
@@ -115,5 +147,5 @@ pub fn get_dhash(prepared_image: PreparedImage) -> u64 {
  * Returns a u64 representing the value of the hash
  */
 pub fn get_phash(prepared_image: PreparedImage) -> u64 {
-
+    0u64
 }

@@ -36,7 +36,7 @@ mod tests {
     use std::path;
     use hash;
 
-    #[test]
+    //#[test]
     fn can_get_test_images() {
         let paths = fs::read_dir(&path::Path::new("./test_images")).unwrap();
         let mut num_paths = 0;
@@ -63,7 +63,8 @@ mod tests {
 
     // Simple function for the unit tests to succinctly test a set of images
     // that are organized in the fashion of large->medium->small
-    fn test_image_set_ahash(
+    fn test_imageset_hash<F: Fn(hash::PreparedImage) -> u64>(
+        hash_func: F,
         large_path: &str,
         medium_path: &str,
         small_path: &str,
@@ -78,36 +79,39 @@ mod tests {
         let medium_prepared_image = hash::prepare_image(path::Path::new(medium_path), 8u32);
         let small_prepared_image = hash::prepare_image(path::Path::new(small_path), 8u32);
         
-        let large_ahash = hash::get_ahash(large_prepared_image);
-        let medium_ahash = hash::get_ahash(medium_prepared_image);
-        let small_ahash = hash::get_ahash(small_prepared_image);
+        let actual_large_hash = hash_func(large_prepared_image);
+        let actual_medium_hash = hash_func(medium_prepared_image);
+        let actual_small_hash = hash_func(small_prepared_image);
 
-        println!("{}: {}", large_path, large_ahash);
-        println!("{}: {}", medium_path, medium_ahash);
-        println!("{}: {}", small_path, small_ahash);
+        // println for the purpose of debugging
+        println!("{}: expected: {} actual: {}", large_path, expected_large_hash, actual_large_hash);
+        println!("{}: expected: {} actual: {}", medium_path, expected_medium_hash, actual_medium_hash);
+        println!("{}: expected: {} actual: {}", small_path, expected_small_hash, actual_small_hash);
         
-        assert!(large_ahash == expected_large_hash);
-        assert!(medium_ahash == expected_medium_hash);
-        assert!(small_ahash == expected_small_hash);
+        let actual_large_medium_hamming = hash::calculate_hamming_distance(actual_large_hash, actual_medium_hash);
+        let actual_large_small_hamming = hash::calculate_hamming_distance(actual_large_hash, actual_small_hash);
+        let actual_medium_small_hamming = hash::calculate_hamming_distance(actual_medium_hash, actual_small_hash);
 
-        let large_medium_hamming = hash::calculate_hamming_distance(large_ahash, medium_ahash);
-        let large_small_hamming = hash::calculate_hamming_distance(large_ahash, small_ahash);
-        let medium_small_hamming = hash::calculate_hamming_distance(medium_ahash, small_ahash);
+        println!("Large-Medium Hamming Distance: expected: {} actual: {}", expected_large_medium_hamming, actual_large_medium_hamming);
+        println!("Large-Small Hamming Distance: expected: {} actual: {}", expected_large_small_hamming, actual_large_small_hamming);
+        println!("Medium-Small Hamming Distance: expected: {} actual: {}", expected_medium_small_hamming, actual_medium_small_hamming);
+        
+        // Doing that asserts
+        assert!(actual_large_hash == expected_large_hash);
+        assert!(actual_medium_hash == expected_medium_hash);
+        assert!(actual_small_hash == expected_small_hash);
 
-        println!("Large-Medium Hamming Distance: {}", large_medium_hamming);
-        println!("Large-Small Hamming Distance: {}", large_small_hamming);
-        println!("Medium-Small Hamming Distance: {}", medium_small_hamming);
-
-        assert!(large_medium_hamming == expected_large_medium_hamming);
-        assert!(large_small_hamming == expected_large_small_hamming);
-        assert!(medium_small_hamming == expected_medium_small_hamming);
+        assert!(actual_large_medium_hamming == expected_large_medium_hamming);
+        assert!(actual_large_small_hamming == expected_large_small_hamming);
+        assert!(actual_medium_small_hamming == expected_medium_small_hamming);
 
     }
 
-    #[test]
+    //#[test]
     fn confirm_ahash_results() {
         // Sample_01 tests
-        test_image_set_ahash(
+        test_imageset_hash(
+            hash::get_ahash,
             "./test_images/sample_01_large.jpg",
             "./test_images/sample_01_medium.jpg",
             "./test_images/sample_01_small.jpg",
@@ -120,7 +124,8 @@ mod tests {
         );
         
         // Sample_02 tests
-        test_image_set_ahash(
+        test_imageset_hash(
+            hash::get_ahash,
             "./test_images/sample_02_large.jpg",
             "./test_images/sample_02_medium.jpg",
             "./test_images/sample_02_small.jpg",
@@ -132,7 +137,8 @@ mod tests {
             0u64
         );
         // Sample_03 tests
-        test_image_set_ahash(
+        test_imageset_hash(
+            hash::get_ahash,
             "./test_images/sample_03_large.jpg",
             "./test_images/sample_03_medium.jpg",
             "./test_images/sample_03_small.jpg",
@@ -145,7 +151,8 @@ mod tests {
         );
         
         // Sample_04 tests
-        test_image_set_ahash(
+        test_imageset_hash(
+            hash::get_ahash,
             "./test_images/sample_04_large.jpg",
             "./test_images/sample_04_medium.jpg",
             "./test_images/sample_04_small.jpg",
@@ -158,4 +165,61 @@ mod tests {
         );
     }
 
+    #[test]
+    fn confirm_dhash_results() {
+        // Sample_01 tests
+        test_imageset_hash(
+            hash::get_dhash,
+            "./test_images/sample_01_large.jpg",
+            "./test_images/sample_01_medium.jpg",
+            "./test_images/sample_01_small.jpg",
+            7937395827556495926,
+            7937395827556495926,
+            7939647627370181174,
+            0u64,
+            1u64,
+            1u64
+        );
+        
+        // Sample_02 tests
+        test_imageset_hash(
+            hash::get_dhash,
+            "./test_images/sample_02_large.jpg",
+            "./test_images/sample_02_medium.jpg",
+            "./test_images/sample_02_small.jpg",
+            11009829669713008949,
+            11009829670249879861,
+            11009829669713008949,
+            1u64,
+            0u64,
+            1u64
+        );
+        // Sample_03 tests
+        test_imageset_hash(
+            hash::get_dhash,
+            "./test_images/sample_03_large.jpg",
+            "./test_images/sample_03_medium.jpg",
+            "./test_images/sample_03_small.jpg",
+            225528496439353286,
+            225528496439353286,
+            226654396346195908,
+            0u64,
+            2u64,
+            2u64
+        );
+        
+        // Sample_04 tests
+        test_imageset_hash(
+            hash::get_dhash,
+            "./test_images/sample_04_large.jpg",
+            "./test_images/sample_04_medium.jpg",
+            "./test_images/sample_04_small.jpg",
+            14620651386429567209,
+            14620651386429567209,
+            14620651386429567209,
+            0u64,
+            0u64,
+            0u64
+        );
+    }
 }
