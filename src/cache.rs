@@ -38,11 +38,11 @@ fn get_file_hash(path: &Path) -> Result<String, Error> {
 /**
  * Put an image buffer in the cache
  */
-pub fn put_in_cache(path: &Path, image: &ImageBuffer<image::Luma<u8>, Vec<u8>>)  {
+pub fn put_in_cache(path: &Path, size: u32, image: &ImageBuffer<image::Luma<u8>, Vec<u8>>)  {
     let hash = get_file_hash(&path);
     match hash {
         Ok(sha1) => {
-            let cache_path_str = format!("{}/{}.{}",CACHE_DIR, sha1, CACHE_FILE_EXT);
+            let cache_path_str = format!("{}/{}x{}_{}.{}",CACHE_DIR, size, size, sha1, CACHE_FILE_EXT);
             let cached_path = Path::new(&cache_path_str);
             // Save the file into the cache
             match image.save(cached_path) {
@@ -57,12 +57,12 @@ pub fn put_in_cache(path: &Path, image: &ImageBuffer<image::Luma<u8>, Vec<u8>>) 
 /**
  * Get an image buffer out of the cache
  */
-pub fn get_from_cache(path: &Path) -> Option<ImageBuffer<image::Luma<u8>, Vec<u8>>> {
+pub fn get_from_cache(path: &Path, size: u32) -> Option<ImageBuffer<image::Luma<u8>, Vec<u8>>> {
     let hash = get_file_hash(&path);
     match hash {
         Ok(sha1) => {
             // Check if the file exists in the cache
-            let cache_path_str = format!("{}/{}.{}",CACHE_DIR, sha1, CACHE_FILE_EXT);
+            let cache_path_str = format!("{}/{}x{}_{}.{}",CACHE_DIR, size, size, sha1, CACHE_FILE_EXT);
             let cached_path = Path::new(&cache_path_str);
             // Try to open, if it does, then we can read the image in
             match File::open(&cached_path) {
@@ -70,8 +70,9 @@ pub fn get_from_cache(path: &Path) -> Option<ImageBuffer<image::Luma<u8>, Vec<u8
                     let image = image::open(&cached_path).unwrap();
                     Some(image.to_luma())
                 },
-                Err(e) => {
-                    println!("Error: {}", e);
+                // Don't really care here, it just means an existing cached
+                // file doesn't exist, or can't be read.
+                Err(_) => {
                     None
                 },
             }
