@@ -29,10 +29,10 @@ pub struct PreparedImage<'a> {
  * Wraps the various perceptual hashes
  */
 pub struct PerceptualHashes<'a> {
-    orig_path: &'a str,
-    ahash: u64,
-    dhash: u64,
-    phash: u64
+    pub orig_path: &'a str,
+    pub ahash: u64,
+    pub dhash: u64,
+    pub phash: u64
 }
 
 /**

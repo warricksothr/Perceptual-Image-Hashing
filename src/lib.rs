@@ -7,25 +7,6 @@ use std::path::Path;
 
 mod hash;
 
-pub fn hello(mut result: String) -> String {
-    let helloworld = "Hello, World!\n";
-    result.push_str(helloworld);
-    let n = 1u8;
-    let ns = format!("1: {:b}\n", n);
-    let n2 = 2u8;
-    let n2s = format!("2: {:b}\n", n2);
-    result.push_str(&ns);
-    result.push_str(&n2s);
-    let mut endian = "Big Endian\n";
-    if cfg!(target_endian = "big") {
-        result.push_str(endian);
-    } else {
-        endian = "Little Endian\n";
-        result.push_str(endian);
-    }
-    result
-}
-
 pub fn get_phashes(path: &Path) -> hash::PerceptualHashes {
     hash::get_perceptual_hashes(path, 8)
 }
