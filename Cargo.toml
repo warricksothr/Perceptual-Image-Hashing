@@ -7,3 +7,5 @@ authors = ["Drew Short <warrick@sothr.com>"]
 docopt = "*"
 rustc-serialize = "*"
 image = "*"
+complex = "*"
+dft = "*"

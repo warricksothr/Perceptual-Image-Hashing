@@ -27,7 +27,7 @@ pub fn hello(mut result: String) -> String {
 }
 
 pub fn get_phashes(path: &Path) -> hash::PerceptualHashes {
-    hash::get_perceptual_hashes(path, 8, 32)
+    hash::get_perceptual_hashes(path, 8)
 }
 
 pub fn get_ahash(path: &Path) -> u64 {
@@ -84,8 +84,9 @@ mod tests {
 
     // Simple function for the unit tests to succinctly test a set of images
     // that are organized in the fashion of large->medium->small
-    fn test_imageset_hash<F: Fn(hash::PreparedImage) -> u64>(
+    fn test_imageset_hash<F: Fn(&hash::PreparedImage) -> u64>(
         hash_func: F,
+        resize_target: u32,
         large_path: &str,
         medium_path: &str,
         small_path: &str,
@@ -96,13 +97,13 @@ mod tests {
         expected_large_small_hamming: u64,
         expected_medium_small_hamming: u64) {
         
-        let large_prepared_image = hash::prepare_image(path::Path::new(large_path), 8u32);
-        let medium_prepared_image = hash::prepare_image(path::Path::new(medium_path), 8u32);
-        let small_prepared_image = hash::prepare_image(path::Path::new(small_path), 8u32);
+        let large_prepared_image = hash::prepare_image(path::Path::new(large_path), resize_target);
+        let medium_prepared_image = hash::prepare_image(path::Path::new(medium_path), resize_target);
+        let small_prepared_image = hash::prepare_image(path::Path::new(small_path), resize_target);
         
-        let actual_large_hash = hash_func(large_prepared_image);
-        let actual_medium_hash = hash_func(medium_prepared_image);
-        let actual_small_hash = hash_func(small_prepared_image);
+        let actual_large_hash = hash_func(&large_prepared_image);
+        let actual_medium_hash = hash_func(&medium_prepared_image);
+        let actual_small_hash = hash_func(&small_prepared_image);
 
         // println for the purpose of debugging
         println!("{}: expected: {} actual: {}", large_path, expected_large_hash, actual_large_hash);
@@ -133,6 +134,7 @@ mod tests {
         // Sample_01 tests
         test_imageset_hash(
             hash::get_ahash,
+            8u32,
             "./test_images/sample_01_large.jpg",
             "./test_images/sample_01_medium.jpg",
             "./test_images/sample_01_small.jpg",
@@ -147,6 +149,7 @@ mod tests {
         // Sample_02 tests
         test_imageset_hash(
             hash::get_ahash,
+            8u32,
             "./test_images/sample_02_large.jpg",
             "./test_images/sample_02_medium.jpg",
             "./test_images/sample_02_small.jpg",
@@ -160,6 +163,7 @@ mod tests {
         // Sample_03 tests
         test_imageset_hash(
             hash::get_ahash,
+            8u32,
             "./test_images/sample_03_large.jpg",
             "./test_images/sample_03_medium.jpg",
             "./test_images/sample_03_small.jpg",
@@ -174,6 +178,7 @@ mod tests {
         // Sample_04 tests
         test_imageset_hash(
             hash::get_ahash,
+            8u32,
             "./test_images/sample_04_large.jpg",
             "./test_images/sample_04_medium.jpg",
             "./test_images/sample_04_small.jpg",
@@ -191,6 +196,7 @@ mod tests {
         // Sample_01 tests
         test_imageset_hash(
             hash::get_dhash,
+            8u32,
             "./test_images/sample_01_large.jpg",
             "./test_images/sample_01_medium.jpg",
             "./test_images/sample_01_small.jpg",
@@ -205,6 +211,7 @@ mod tests {
         // Sample_02 tests
         test_imageset_hash(
             hash::get_dhash,
+            8u32,
             "./test_images/sample_02_large.jpg",
             "./test_images/sample_02_medium.jpg",
             "./test_images/sample_02_small.jpg",
@@ -218,6 +225,7 @@ mod tests {
         // Sample_03 tests
         test_imageset_hash(
             hash::get_dhash,
+            8u32,
             "./test_images/sample_03_large.jpg",
             "./test_images/sample_03_medium.jpg",
             "./test_images/sample_03_small.jpg",
@@ -232,6 +240,7 @@ mod tests {
         // Sample_04 tests
         test_imageset_hash(
             hash::get_dhash,
+            8u32,
             "./test_images/sample_04_large.jpg",
             "./test_images/sample_04_medium.jpg",
             "./test_images/sample_04_small.jpg",
@@ -241,6 +250,68 @@ mod tests {
             0u64,
             0u64,
             0u64
+        );
+    }
+    
+    #[test]
+    fn confirm_phash_results() {
+        // Sample_01 tests
+        test_imageset_hash(
+            hash::get_phash,
+            32u32,
+            "./test_images/sample_01_large.jpg",
+            "./test_images/sample_01_medium.jpg",
+            "./test_images/sample_01_small.jpg",
+            72357778504597504,
+            72357778504597504,
+            72357778504597504,
+            0u64,
+            0u64,
+            0u64
+        );
+        
+        // Sample_02 tests
+        test_imageset_hash(
+            hash::get_phash,
+            32u32,
+            "./test_images/sample_02_large.jpg",
+            "./test_images/sample_02_medium.jpg",
+            "./test_images/sample_02_small.jpg",
+            5332332327550844928,
+            5332332327550844928,
+            5332332327550844928,
+            0u64,
+            0u64,
+            0u64
+        );
+        // Sample_03 tests
+        test_imageset_hash(
+            hash::get_phash,
+            32u32,
+            "./test_images/sample_03_large.jpg",
+            "./test_images/sample_03_medium.jpg",
+            "./test_images/sample_03_small.jpg",
+            6917529027641081856,
+            6917529027641081856,
+            6917529027641081856,
+            0u64,
+            0u64,
+            0u64
+        );
+        
+        // Sample_04 tests
+        test_imageset_hash(
+            hash::get_phash,
+            32u32,
+            "./test_images/sample_04_large.jpg",
+            "./test_images/sample_04_medium.jpg",
+            "./test_images/sample_04_small.jpg",
+            10997931646002397184,
+            10997931646002397184,
+            11142046834078253056,
+            0u64,
+            1u64,
+            1u64
         );
     }
 }
