@@ -8,6 +8,18 @@ use std::path::Path;
 mod hash;
 mod cache;
 
+/**
+ * Prepare the library for work.
+ *
+ * Not performing this step may cause parts to fail.
+ */
+pub fn init() {
+    match cache::prep_cache() {
+        Ok(_) => {},
+        Err(e) => println!("Error: {}", e),
+    }
+}
+
 pub fn get_phashes(path: &Path) -> hash::PerceptualHashes {
     hash::get_perceptual_hashes(path, 8)
 }

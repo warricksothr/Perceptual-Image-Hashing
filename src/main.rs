@@ -38,6 +38,9 @@ fn main() {
     let args: Args = Docopt::new(USAGE)
                                 .and_then(|d| d.decode())
                                 .unwrap_or_else(|e| e.exit());
+    // Init the hashing library
+    pihash::init();
+
     //println!("{:?}", args);
     // All flags set or, no flags set
     if (args.flag_ahash && args.flag_dhash && args.flag_phash) 

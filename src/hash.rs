@@ -16,6 +16,7 @@ use self::image::{
 };
 use self::dft::real;
 use self::complex::*;
+use cache;
 
 /**
  * Prepared image that can be used to generate hashes
@@ -52,13 +53,19 @@ pub struct PerceptualHashes<'a> {
 pub fn prepare_image(path: &Path, size: u32) -> PreparedImage {
     let image_path = path.to_str().unwrap();
     // Check if we have the already converted image in a cache and use that if possible.
-    
-
-    // Otherwise let's do that work now and store it.
-    let image = image::open(path).unwrap();
-    let small_image = image.resize_exact(size, size, FilterType::Lanczos3);
-    let grey_image = small_image.to_luma();
-    PreparedImage { orig_path: &*image_path, image: grey_image }
+    match cache::get_from_cache(&path) {
+        Some(image) => {
+            PreparedImage { orig_path: &*image_path, image: image }
+        },
+        None => {
+            // Otherwise let's do that work now and store it.
+            let image = image::open(path).unwrap();
+            let small_image = image.resize_exact(size, size, FilterType::Lanczos3);
+            let grey_image = small_image.to_luma();
+            cache::put_in_cache(&path, &grey_image);
+            PreparedImage { orig_path: &*image_path, image: grey_image }
+        },
+    }
 }
 
 /**

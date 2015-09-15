@@ -12,3 +12,6 @@
 
 # Building a library, so ignore the lock file
 Cargo.lock
+
+# Cache Directory
+.hash_cache/
