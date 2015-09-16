@@ -1,0 +1,24 @@
+image: jimmycuadra/rust:nightly
+stages:
+    - build
+    - test
+
+build:
+    stage: build
+    script:
+        - cargo build --release
+    only:
+        - master
+    tags:
+        - rust
+    allow_failure: false
+
+test:
+    stage: test
+    script:
+        - cargo test --release
+    only:
+        - master
+    tags:
+        - rust
+    allow_failure: false
