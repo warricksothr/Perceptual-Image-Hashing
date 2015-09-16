@@ -1,4 +1,4 @@
-image: jimmycuadra/rust:nightly
+image: jimmycuadra/rust:latest
 stages:
     - build
     - test
