@@ -1,17 +1,6 @@
 image: jimmycuadra/rust:latest
 stages:
-    - build
     - test
-
-build:
-    stage: build
-    script:
-        - cargo build --release
-    only:
-        - master
-    tags:
-        - rust
-    allow_failure: false
 
 test:
     stage: test
