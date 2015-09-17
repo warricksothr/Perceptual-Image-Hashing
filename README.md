@@ -1,6 +1,6 @@
 # Perceptual Image Hashing
 
-[![NixBuildStatus](https://travis-ci.org/warricksothr/Perceptual-Image-Hashing.svg?branch=master)](https://travis-ci.org/warricksothr/Percptual-Image-Hashing)
+[![NixBuildStatus](https://travis-ci.org/warricksothr/Perceptual-Image-Hashing.svg?branch=master)](https://travis-ci.org/warricksothr/Perceptual-Image-Hashing)
 [![WindowsBuildStatus](https://ci.appveyor.com/api/projects/status/qs9w9eq6yerkoans?svg=true)](https://ci.appveyor.com/project/warricksothr/perceptual-image-hashing)
 
 The goal of this library is to offer a utility for calculating perceptual hashes of images for the purpose of comparing images for similarity
