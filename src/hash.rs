@@ -37,6 +37,34 @@ pub struct PerceptualHashes<'a> {
 }
 
 /**
+ * All the supported precision types
+ */
+pub enum Precision {
+    Low, 
+    Medium,
+    High,
+}
+
+impl Precision {
+    fn get_size(&self) -> u32 {
+        match *self {
+            Precision::Low => 4,
+            Precision::Medium => 8,
+            Precision::High => 16,
+        }
+    }
+}
+
+/**
+ * Types of hashes supported
+ */
+pub enum HashType {
+    Ahash,
+    Dhash,
+    Phash
+}
+
+/**
  * Resonsible for parsing a path, converting an image and package it to be
  * hashed.
  *
@@ -50,8 +78,12 @@ pub struct PerceptualHashes<'a> {
  * A PreparedImage struct with the required information for performing hashing
  *
  */
-pub fn prepare_image(path: &Path, size: u32) -> PreparedImage {
+pub fn prepare_image<'a>(path: &'a Path, hash_type: &HashType, precision: &Precision) -> PreparedImage<'a> {
     let image_path = path.to_str().unwrap();
+    let size: u32 = match *hash_type {
+        HashType::Phash => precision.get_size() * 4,
+        _ => precision.get_size()
+    };
     // Check if we have the already converted image in a cache and use that if possible.
     match cache::get_from_cache(&path, size) {
         Some(image) => {
@@ -71,12 +103,12 @@ pub fn prepare_image(path: &Path, size: u32) -> PreparedImage {
 /**
  * Get all perceptual hashes for an image
  */
-pub fn get_perceptual_hashes(path: &Path, size: u32) -> PerceptualHashes {
+pub fn get_perceptual_hashes<'a>(path: &'a Path, precision: &Precision) -> PerceptualHashes<'a> {
     let image_path = path.to_str().unwrap();
-    let prepared_image = prepare_image(path, size);
+    let prepared_image = prepare_image(path, &HashType::Ahash, &precision);
     // phash uses a DFT, so it needs an image 4 times larger to work with for
     // the same precision of hash. That said, this hash is much more accurate.
-    let phash_prepared_image = prepare_image(path, size*4);
+    let phash_prepared_image = prepare_image(path, &HashType::Phash, &precision);
     let ahash = get_ahash(&prepared_image);
     let dhash = get_dhash(&prepared_image);
     let phash = get_phash(&phash_prepared_image);

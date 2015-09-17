@@ -21,19 +21,19 @@ pub fn init() {
 }
 
 pub fn get_phashes(path: &Path) -> hash::PerceptualHashes {
-    hash::get_perceptual_hashes(path, 8)
+    hash::get_perceptual_hashes(path, &hash::Precision::Medium)
 }
 
 pub fn get_ahash(path: &Path) -> u64 {
-    hash::get_ahash(&hash::prepare_image(path, 8))
+    hash::get_ahash(&hash::prepare_image(path, &hash::HashType::Ahash, &hash::Precision::Medium))
 }
 
 pub fn get_dhash(path: &Path) -> u64 {
-    hash::get_dhash(&hash::prepare_image(path, 8))
+    hash::get_dhash(&hash::prepare_image(path, &hash::HashType::Dhash, &hash::Precision::Medium))
 }
 
 pub fn get_phash(path: &Path) -> u64 {
-    hash::get_phash(&hash::prepare_image(path, 32))
+    hash::get_phash(&hash::prepare_image(path, &hash::HashType::Phash, &hash::Precision::Medium))
 }
 
 pub fn get_hamming_distance(hash1: u64, hash2: u64) -> u64 {
@@ -49,6 +49,7 @@ mod tests {
     use super::*;
     use std::fs;
     use std::path;
+    use std::clone::Clone;
     use hash;
 
     #[test]
@@ -80,7 +81,8 @@ mod tests {
     // that are organized in the fashion of large->medium->small
     fn test_imageset_hash<F: Fn(&hash::PreparedImage) -> u64>(
         hash_func: F,
-        resize_target: u32,
+        hash_type: hash::HashType,
+        precision: hash::Precision,
         large_path: &str,
         medium_path: &str,
         small_path: &str,
@@ -91,9 +93,9 @@ mod tests {
         expected_large_small_hamming: u64,
         expected_medium_small_hamming: u64) {
         
-        let large_prepared_image = hash::prepare_image(path::Path::new(large_path), resize_target);
-        let medium_prepared_image = hash::prepare_image(path::Path::new(medium_path), resize_target);
-        let small_prepared_image = hash::prepare_image(path::Path::new(small_path), resize_target);
+        let large_prepared_image = hash::prepare_image(path::Path::new(large_path), &hash_type, &precision);
+        let medium_prepared_image = hash::prepare_image(path::Path::new(medium_path), &hash_type, &precision);
+        let small_prepared_image = hash::prepare_image(path::Path::new(small_path), &hash_type, &precision);
         
         let actual_large_hash = hash_func(&large_prepared_image);
         let actual_medium_hash = hash_func(&medium_prepared_image);
@@ -128,7 +130,8 @@ mod tests {
         // Sample_01 tests
         test_imageset_hash(
             hash::get_ahash,
-            8u32,
+            hash::HashType::Ahash,
+            hash::Precision::Medium,
             "./test_images/sample_01_large.jpg",
             "./test_images/sample_01_medium.jpg",
             "./test_images/sample_01_small.jpg",
@@ -143,7 +146,8 @@ mod tests {
         // Sample_02 tests
         test_imageset_hash(
             hash::get_ahash,
-            8u32,
+            hash::HashType::Ahash,
+            hash::Precision::Medium,
             "./test_images/sample_02_large.jpg",
             "./test_images/sample_02_medium.jpg",
             "./test_images/sample_02_small.jpg",
@@ -157,7 +161,8 @@ mod tests {
         // Sample_03 tests
         test_imageset_hash(
             hash::get_ahash,
-            8u32,
+            hash::HashType::Ahash,
+            hash::Precision::Medium,
             "./test_images/sample_03_large.jpg",
             "./test_images/sample_03_medium.jpg",
             "./test_images/sample_03_small.jpg",
@@ -172,7 +177,8 @@ mod tests {
         // Sample_04 tests
         test_imageset_hash(
             hash::get_ahash,
-            8u32,
+            hash::HashType::Ahash,
+            hash::Precision::Medium,
             "./test_images/sample_04_large.jpg",
             "./test_images/sample_04_medium.jpg",
             "./test_images/sample_04_small.jpg",
@@ -190,7 +196,8 @@ mod tests {
         // Sample_01 tests
         test_imageset_hash(
             hash::get_dhash,
-            8u32,
+            hash::HashType::Dhash,
+            hash::Precision::Medium,
             "./test_images/sample_01_large.jpg",
             "./test_images/sample_01_medium.jpg",
             "./test_images/sample_01_small.jpg",
@@ -205,7 +212,8 @@ mod tests {
         // Sample_02 tests
         test_imageset_hash(
             hash::get_dhash,
-            8u32,
+            hash::HashType::Dhash,
+            hash::Precision::Medium,
             "./test_images/sample_02_large.jpg",
             "./test_images/sample_02_medium.jpg",
             "./test_images/sample_02_small.jpg",
@@ -219,7 +227,8 @@ mod tests {
         // Sample_03 tests
         test_imageset_hash(
             hash::get_dhash,
-            8u32,
+            hash::HashType::Dhash,
+            hash::Precision::Medium,
             "./test_images/sample_03_large.jpg",
             "./test_images/sample_03_medium.jpg",
             "./test_images/sample_03_small.jpg",
@@ -234,7 +243,8 @@ mod tests {
         // Sample_04 tests
         test_imageset_hash(
             hash::get_dhash,
-            8u32,
+            hash::HashType::Dhash,
+            hash::Precision::Medium,
             "./test_images/sample_04_large.jpg",
             "./test_images/sample_04_medium.jpg",
             "./test_images/sample_04_small.jpg",
@@ -252,7 +262,8 @@ mod tests {
         // Sample_01 tests
         test_imageset_hash(
             hash::get_phash,
-            32u32,
+            hash::HashType::Phash,
+            hash::Precision::Medium,
             "./test_images/sample_01_large.jpg",
             "./test_images/sample_01_medium.jpg",
             "./test_images/sample_01_small.jpg",
@@ -267,7 +278,8 @@ mod tests {
         // Sample_02 tests
         test_imageset_hash(
             hash::get_phash,
-            32u32,
+            hash::HashType::Phash,
+            hash::Precision::Medium,
             "./test_images/sample_02_large.jpg",
             "./test_images/sample_02_medium.jpg",
             "./test_images/sample_02_small.jpg",
@@ -281,7 +293,8 @@ mod tests {
         // Sample_03 tests
         test_imageset_hash(
             hash::get_phash,
-            32u32,
+            hash::HashType::Phash,
+            hash::Precision::Medium,
             "./test_images/sample_03_large.jpg",
             "./test_images/sample_03_medium.jpg",
             "./test_images/sample_03_small.jpg",
@@ -296,7 +309,8 @@ mod tests {
         // Sample_04 tests
         test_imageset_hash(
             hash::get_phash,
-            32u32,
+            hash::HashType::Phash,
+            hash::Precision::Medium,
             "./test_images/sample_04_large.jpg",
             "./test_images/sample_04_medium.jpg",
             "./test_images/sample_04_small.jpg",
