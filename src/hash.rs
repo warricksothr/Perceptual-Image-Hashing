@@ -9,6 +9,7 @@ extern crate dft;
 extern crate complex;
 
 use std::path::Path;
+use std::f64;
 use self::image::{
     GenericImage,
     Pixel,
@@ -17,6 +18,18 @@ use self::image::{
 use self::dft::real;
 use self::complex::*;
 use cache;
+
+// Used to get ranges for the precision of rounding floats
+const FLOAT_PRECISION_MAX_1: f64 = f64::MAX / 10_f64;
+const FLOAT_PRECISION_MIN_1: f64 = f64::MIN / 10_f64;
+const FLOAT_PRECISION_MAX_2: f64 = f64::MAX / 100_f64;
+const FLOAT_PRECISION_MIN_2: f64 = f64::MIN / 100_f64;
+const FLOAT_PRECISION_MAX_3: f64 = f64::MAX / 1000_f64;
+const FLOAT_PRECISION_MIN_3: f64 = f64::MIN / 1000_f64;
+const FLOAT_PRECISION_MAX_4: f64 = f64::MAX / 10000_f64;
+const FLOAT_PRECISION_MIN_4: f64 = f64::MIN / 10000_f64;
+const FLOAT_PRECISION_MAX_5: f64 = f64::MAX / 100000_f64;
+const FLOAT_PRECISION_MIN_5: f64 = f64::MIN / 100000_f64;
 
 /**
  * Prepared image that can be used to generate hashes
@@ -271,8 +284,29 @@ fn calculate_2d_dft(data_matrix: &mut Vec<Vec<f64>>){
 
         // Put the row values back
         for x in 0..width {
-            data_matrix[x][y] = row[x].re();
+            data_matrix[x][y] = round_float(row[x].re());
         }
+    }
+}
+
+fn round_float(f: f64) -> f64 {
+    if f >= FLOAT_PRECISION_MAX_1 || f <= FLOAT_PRECISION_MIN_1 {
+       f
+    }
+    else if f >= FLOAT_PRECISION_MAX_2 || f <= FLOAT_PRECISION_MIN_2 {
+       (f * 10_f64).round() / 10_f64 
+    }
+    else if f >= FLOAT_PRECISION_MAX_3 || f <= FLOAT_PRECISION_MIN_3 {
+       (f * 100_f64).round() / 100_f64 
+    }
+    else if f >= FLOAT_PRECISION_MAX_4 || f <= FLOAT_PRECISION_MIN_4 {
+       (f * 1000_f64).round() / 1000_f64 
+    }
+    else if f >= FLOAT_PRECISION_MAX_5 || f <= FLOAT_PRECISION_MIN_5 {
+       (f * 10000_f64).round() / 10000_f64 
+    }
+    else {
+       (f * 100000_f64).round() / 100000_f64 
     }
 }
 
@@ -360,24 +394,24 @@ fn test_2d_dft() {
     println!("{:?}",test_matrix[1]);
     println!("{:?}",test_matrix[2]);
     println!("{:?}",test_matrix[3]);
-    
-    assert!(test_matrix[0][0] == 24f64);
-    assert!(test_matrix[0][1] == 0f64);
-    assert!(test_matrix[0][2] == 0f64);
-    assert!(test_matrix[0][3] == 0f64);
 
-    assert!(test_matrix[1][0] == 0f64);
-    assert!(test_matrix[1][1] == -0.0000000000000006661338147750939f64);
-    assert!(test_matrix[1][2] == -2.0000000000000004f64);
-    assert!(test_matrix[1][3] == 1.9999999999999993f64);
+    assert!(test_matrix[0][0] == 24_f64);
+    assert!(test_matrix[0][1] == 0_f64);
+    assert!(test_matrix[0][2] == 0_f64);
+    assert!(test_matrix[0][3] == 0_f64);
 
-    assert!(test_matrix[2][0] == 0f64);
-    assert!(test_matrix[2][1] == -2f64);
-    assert!(test_matrix[2][2] == -4f64);
-    assert!(test_matrix[2][3] == -2f64);
+    assert!(test_matrix[1][0] == 0_f64);
+    assert!(test_matrix[1][1] == 0_f64);
+    assert!(test_matrix[1][2] == -2_f64);
+    assert!(test_matrix[1][3] == 2_f64);
 
-    assert!(test_matrix[3][0] == 0f64);
-    assert!(test_matrix[3][1] == 2.000000000000001f64);
-    assert!(test_matrix[3][2] == -1.9999999999999996f64);
-    assert!(test_matrix[3][3] == 0.0000000000000006661338147750939f64);
+    assert!(test_matrix[2][0] == 0_f64);
+    assert!(test_matrix[2][1] == -2_f64);
+    assert!(test_matrix[2][2] == -4_f64);
+    assert!(test_matrix[2][3] == -2_f64);
+
+    assert!(test_matrix[3][0] == 0_f64);
+    assert!(test_matrix[3][1] == 2_f64);
+    assert!(test_matrix[3][2] == -2_f64);
+    assert!(test_matrix[3][3] == 0_f64);
 }

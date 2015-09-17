@@ -49,7 +49,6 @@ mod tests {
     use super::*;
     use std::fs;
     use std::path;
-    use std::clone::Clone;
     use hash;
 
     #[test]
