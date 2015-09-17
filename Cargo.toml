@@ -8,6 +8,7 @@ readme = "README.md"
 keywords = ["phash", "perceptual", "image", "comparison"]
 license = "MIT"
 license-file = "LICENSE"
+exclude = ["test_images/*"]
 
 [dependencies]
 docopt = "*"
