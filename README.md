@@ -1,5 +1,6 @@
 # Perceptual Image Hashing
 
+[![Crates.io shield](https://img.shields.io/crates/v/pihash.svg)](https://crates.io/crates/pihash)
 [![NixBuildStatus](https://travis-ci.org/warricksothr/Perceptual-Image-Hashing.svg?branch=master)](https://travis-ci.org/warricksothr/Perceptual-Image-Hashing)
 [![WindowsBuildStatus](https://ci.appveyor.com/api/projects/status/qs9w9eq6yerkoans?svg=true)](https://ci.appveyor.com/project/warricksothr/perceptual-image-hashing)
 
