@@ -130,13 +130,9 @@ pub fn prepare_image<'a>(path: &'a Path, hash_type: &HashType, precision: &Preci
  */
 pub fn get_perceptual_hashes<'a>(path: &'a Path, precision: &Precision) -> PerceptualHashes<'a> {
     let image_path = path.to_str().unwrap();
-    let prepared_image = prepare_image(path, &HashType::Ahash, &precision);
-    // phash uses a DFT, so it needs an image 4 times larger to work with for
-    // the same precision of hash. That said, this hash is much more accurate.
-    let phash_prepared_image = prepare_image(path, &HashType::Phash, &precision);
     let ahash = AHash::new(&path, &precision).get_hash();
-    let dhash = get_dhash(&prepared_image);
-    let phash = get_phash(&phash_prepared_image);
+    let dhash = DHash::new(&path, &precision).get_hash();
+    let phash = PHash::new(&path, &precision).get_hash();
     PerceptualHashes { orig_path: &*image_path, ahash: ahash, dhash: dhash, phash: phash }
 }
 
@@ -177,10 +173,6 @@ impl<'a> PerceptualHash for AHash<'a> {
     /**
      * Calculate the ahash of the provided prepared image.
      *
-     * # Arguments
-     *
-     * * 'prepared_image' - The already prepared image for perceptual processing.
-     *
      * # Returns 
      *
      * A u64 representing the value of the hash
@@ -218,49 +210,128 @@ impl<'a> PerceptualHash for AHash<'a> {
     }
 }
 
+pub struct DHash<'a> {
+    prepared_image: Box<PreparedImage<'a>>,
+}
 
-/**
- * Calculate the dhash of the provided prepared image
- *
- * # Arguments
- *
- * * 'prepared_image' - The already prepared image for perceptual processing
- *
- * # Return
- *
- * Returns a u64 representing the value of the hash
- */
-pub fn get_dhash(prepared_image: &PreparedImage) -> u64 {
-    // Stored for later
-    let first_pixel_val = prepared_image.image.pixels().nth(0).unwrap().channels()[0];
-    let last_pixel_val = prepared_image.image.pixels().last().unwrap().channels()[0];
+impl<'a> DHash<'a> {
+    pub fn new(path: &'a Path, precision: &Precision) -> Self {
+        DHash { prepared_image: Box::new(prepare_image(&path, &HashType::Dhash, &precision)) }
+    }
+}
 
-    // Calculate the dhash
-    let mut previous_pixel_val = 0u64;
-    let mut hash = 0u64;
-    for (index, pixel) in prepared_image.image.pixels().enumerate() {
-        if index == 0 {
-            previous_pixel_val = pixel.channels()[0] as u64;
-            continue;
+impl<'a> PerceptualHash for DHash<'a> {
+    /**
+     * Calculate the dhash of the provided prepared image
+     *
+     * # Return
+     *
+     * Returns a u64 representing the value of the hash
+     */
+    fn get_hash(&self) -> u64 {
+        // Stored for later
+        let first_pixel_val = self.prepared_image.image.pixels().nth(0).unwrap().channels()[0];
+        let last_pixel_val = self.prepared_image.image.pixels().last().unwrap().channels()[0];
+
+        // Calculate the dhash
+        let mut previous_pixel_val = 0u64;
+        let mut hash = 0u64;
+        for (index, pixel) in self.prepared_image.image.pixels().enumerate() {
+            if index == 0 {
+                previous_pixel_val = pixel.channels()[0] as u64;
+                continue;
+            }
+            let channels = pixel.channels();
+            let pixel_val = channels[0] as u64;
+            if pixel_val >= previous_pixel_val {
+                hash |= 1;
+            } else {
+                hash |= 0;
+            }
+            hash <<= 1;
+            previous_pixel_val = channels[0] as u64;
         }
-        let channels = pixel.channels();
-        let pixel_val = channels[0] as u64;
-        if pixel_val >= previous_pixel_val {
+
+        if first_pixel_val >= last_pixel_val {
             hash |= 1;
         } else {
             hash |= 0;
-        }
-        hash <<= 1;
-        previous_pixel_val = channels[0] as u64;
+        }   
+
+        hash
     }
+}
 
-    if first_pixel_val >= last_pixel_val {
-        hash |= 1;
-    } else {
-        hash |= 0;
-    }   
+pub struct PHash<'a> {
+    prepared_image: Box<PreparedImage<'a>>,
+}
 
-    hash
+impl<'a> PHash<'a> {
+    pub fn new(path: &'a Path, precision: &Precision) -> Self {
+        PHash { prepared_image: Box::new(prepare_image(&path, &HashType::Phash, &precision)) }
+    }
+}
+
+impl<'a> PerceptualHash for PHash<'a> {
+    /**
+     * Calculate the phash of the provided prepared image
+     *
+     * # Return
+     *
+     * Returns a u64 representing the value of the hash
+     */
+    fn get_hash(&self) -> u64 {
+        // Get the image data into a vector to perform the DFT on.
+        let  width = self.prepared_image.image.width() as usize;
+        let  height = self.prepared_image.image.height() as usize;
+        
+        // Get 2d data to 2d FFT/DFT
+        let mut data_matrix: Vec<Vec<f64>> = Vec::new();
+        for x in (0..width) {
+            data_matrix.push(Vec::new());
+            for y in (0..height) {
+                let pos_x = x as u32;
+                let pos_y = y as u32;
+                data_matrix[x].push(self.prepared_image.image.get_pixel(pos_x,pos_y).channels()[0] as f64);
+            }
+        }
+
+        // Perform the 2D DFT operation on our matrix
+        calculate_2d_dft(&mut data_matrix);
+        
+        // Only need the top left quadrant
+        let target_width = (width / 4) as usize;
+        let target_height = (height / 4) as usize;
+        let dft_width = (width / 4) as f64;
+        let dft_height = (height / 4) as f64;
+
+        //Calculate the mean
+        let mut total = 0f64;
+        for x in (0..target_width) {
+            for y in (0..target_height) {
+                total += data_matrix[x][y];
+            }
+        }
+        let mean = total / (dft_width * dft_height); 
+
+        // Calculating a hash based on the mean
+        let mut hash = 0u64;
+        for x in (0..target_width) {
+    //        println!("Mean: {} Values: {:?}",mean,data_matrix[x]);
+            for y in (0..target_height) {
+                if data_matrix[x][y] >= mean {
+                    hash |= 1;
+                    //println!("Pixel {} is >= {} therefore {:b}", pixel_sum, mean, hash);
+                } else {
+                    hash |= 0;
+                    //println!("Pixel {} is < {} therefore {:b}", pixel_sum, mean, hash);
+                }
+                hash <<= 1;
+            }
+        }
+        //println!("Hash for {} is {}", prepared_image.orig_path, hash);
+        hash
+    }
 }
 
 /*
@@ -337,70 +408,6 @@ fn round_float(f: f64) -> f64 {
     else {
        (f * 100000_f64).round() / 100000_f64 
     }
-}
-
-/**
- * Calculate the phash of the provided prepared image
- *
- * # Arguments
- *
- * * 'prepared_image' - The already prepared image for perceptual processing
- *
- * # Return
- *
- * Returns a u64 representing the value of the hash
- */
-pub fn get_phash(prepared_image: &PreparedImage) -> u64 {
-    // Get the image data into a vector to perform the DFT on.
-    let  width = prepared_image.image.width() as usize;
-    let  height = prepared_image.image.height() as usize;
-    
-    // Get 2d data to 2d FFT/DFT
-    let mut data_matrix: Vec<Vec<f64>> = Vec::new();
-    for x in (0..width) {
-        data_matrix.push(Vec::new());
-        for y in (0..height) {
-            let pos_x = x as u32;
-            let pos_y = y as u32;
-            data_matrix[x].push(prepared_image.image.get_pixel(pos_x,pos_y).channels()[0] as f64);
-        }
-    }
-
-    // Perform the 2D DFT operation on our matrix
-    calculate_2d_dft(&mut data_matrix);
-    
-    // Only need the top left quadrant
-    let target_width = (width / 4) as usize;
-    let target_height = (height / 4) as usize;
-    let dft_width = (width / 4) as f64;
-    let dft_height = (height / 4) as f64;
-
-    //Calculate the mean
-    let mut total = 0f64;
-    for x in (0..target_width) {
-        for y in (0..target_height) {
-            total += data_matrix[x][y];
-        }
-    }
-    let mean = total / (dft_width * dft_height); 
-
-    // Calculating a hash based on the mean
-    let mut hash = 0u64;
-    for x in (0..target_width) {
-//        println!("Mean: {} Values: {:?}",mean,data_matrix[x]);
-        for y in (0..target_height) {
-            if data_matrix[x][y] >= mean {
-                hash |= 1;
-                //println!("Pixel {} is >= {} therefore {:b}", pixel_sum, mean, hash);
-            } else {
-                hash |= 0;
-                //println!("Pixel {} is < {} therefore {:b}", pixel_sum, mean, hash);
-            }
-            hash <<= 1;
-        }
-    }
-    //println!("Hash for {} is {}", prepared_image.orig_path, hash);
-    hash
 }
 
 #[test]
