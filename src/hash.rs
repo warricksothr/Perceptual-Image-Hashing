@@ -20,14 +20,19 @@ use self::complex::*;
 use cache;
 
 // Used to get ranges for the precision of rounding floats
+// Can round to 1 significant factor of precision
 const FLOAT_PRECISION_MAX_1: f64 = f64::MAX / 10_f64;
 const FLOAT_PRECISION_MIN_1: f64 = f64::MIN / 10_f64;
+// Can round to 2 significant factors of precision
 const FLOAT_PRECISION_MAX_2: f64 = f64::MAX / 100_f64;
 const FLOAT_PRECISION_MIN_2: f64 = f64::MIN / 100_f64;
+// Can round to 3 significant factors of precision
 const FLOAT_PRECISION_MAX_3: f64 = f64::MAX / 1000_f64;
 const FLOAT_PRECISION_MIN_3: f64 = f64::MIN / 1000_f64;
+// Can round to 4 significant factors of precision
 const FLOAT_PRECISION_MAX_4: f64 = f64::MAX / 10000_f64;
 const FLOAT_PRECISION_MIN_4: f64 = f64::MIN / 10000_f64;
+// Can round to 5 significant factors of precision
 const FLOAT_PRECISION_MAX_5: f64 = f64::MAX / 100000_f64;
 const FLOAT_PRECISION_MIN_5: f64 = f64::MIN / 100000_f64;
 
@@ -51,6 +56,10 @@ pub struct PerceptualHashes<'a> {
 
 /**
  * All the supported precision types
+ *
+ * Low aims for 32 bit precision
+ * Medium aims for 64 bit precision
+ * High aims for 128 bit precision
  */
 pub enum Precision {
     Low, 
@@ -58,6 +67,9 @@ pub enum Precision {
     High,
 }
 
+/*
+ * Get the size of the required image
+ */
 impl Precision {
     fn get_size(&self) -> u32 {
         match *self {
@@ -122,7 +134,7 @@ pub fn get_perceptual_hashes<'a>(path: &'a Path, precision: &Precision) -> Perce
     // phash uses a DFT, so it needs an image 4 times larger to work with for
     // the same precision of hash. That said, this hash is much more accurate.
     let phash_prepared_image = prepare_image(path, &HashType::Phash, &precision);
-    let ahash = get_ahash(&prepared_image);
+    let ahash = AHash::new(&path, &precision).get_hash();
     let dhash = get_dhash(&prepared_image);
     let phash = get_phash(&phash_prepared_image);
     PerceptualHashes { orig_path: &*image_path, ahash: ahash, dhash: dhash, phash: phash }
@@ -147,48 +159,65 @@ pub fn calculate_hamming_distance(hash1: u64, hash2: u64) -> u64 {
     hamming
 }
 
-/**
- * Calculate the ahash of the provided prepared image.
- *
- * # Arguments
- *
- * * 'prepared_image' - The already prepared image for perceptual processing.
- *
- * # Returns 
- *
- * A u64 representing the value of the hash
- */
-pub fn get_ahash(prepared_image: &PreparedImage) -> u64 {
-    let (width, height) = prepared_image.image.dimensions();
-
-    // calculating the average pixel value
-    let mut total = 0u64;
-    for pixel in prepared_image.image.pixels() {
-        let channels = pixel.channels();
-        //println!("Pixel is: {}", channels[0]);
-        total += channels[0] as u64;
-    }
-    let mean = total / (width*height) as u64;
-    //println!("Mean for {} is {}", prepared_image.orig_path, mean);
-
-    // Calculating a hash based on the mean
-    let mut hash = 0u64;
-    for pixel in prepared_image.image.pixels() {
-        let channels = pixel.channels();
-        let pixel_sum = channels[0] as u64;
-        if pixel_sum >= mean {
-            hash |= 1;
-            //println!("Pixel {} is >= {} therefore {:b}", pixel_sum, mean, hash);
-        } else {
-            hash |= 0;
-            //println!("Pixel {} is < {} therefore {:b}", pixel_sum, mean, hash);
-        }
-        hash <<= 1;
-    }
-    //println!("Hash for {} is {}", prepared_image.orig_path, hash);
-
-    hash
+pub trait PerceptualHash {
+    fn get_hash(&self) -> u64;
 }
+
+pub struct AHash<'a> {
+    prepared_image: Box<PreparedImage<'a>>,
+}
+
+impl<'a> AHash<'a> {
+    pub fn new(path: &'a Path, precision: &Precision) -> Self {
+        AHash { prepared_image: Box::new(prepare_image(&path, &HashType::Ahash, &precision)) }
+    }
+}
+
+impl<'a> PerceptualHash for AHash<'a> {
+    /**
+     * Calculate the ahash of the provided prepared image.
+     *
+     * # Arguments
+     *
+     * * 'prepared_image' - The already prepared image for perceptual processing.
+     *
+     * # Returns 
+     *
+     * A u64 representing the value of the hash
+     */
+    fn get_hash(&self) -> u64 {
+        let (width, height) = self.prepared_image.image.dimensions();
+
+        // calculating the average pixel value
+        let mut total = 0u64;
+        for pixel in self.prepared_image.image.pixels() {
+            let channels = pixel.channels();
+            //println!("Pixel is: {}", channels[0]);
+            total += channels[0] as u64;
+        }
+        let mean = total / (width*height) as u64;
+        //println!("Mean for {} is {}", prepared_image.orig_path, mean);
+
+        // Calculating a hash based on the mean
+        let mut hash = 0u64;
+        for pixel in self.prepared_image.image.pixels() {
+            let channels = pixel.channels();
+            let pixel_sum = channels[0] as u64;
+            if pixel_sum >= mean {
+                hash |= 1;
+                //println!("Pixel {} is >= {} therefore {:b}", pixel_sum, mean, hash);
+            } else {
+                hash |= 0;
+                //println!("Pixel {} is < {} therefore {:b}", pixel_sum, mean, hash);
+            }
+            hash <<= 1;
+        }
+        //println!("Hash for {} is {}", prepared_image.orig_path, hash);
+
+        hash
+    }
+}
+
 
 /**
  * Calculate the dhash of the provided prepared image

@@ -3,10 +3,11 @@
 // Licensed under the MIT license<LICENSE-MIT or http://opensource.org/licenses/MIT>.
 // This file may not be copied, modified, or distributed except according to those terms.
 
-use std::path::Path;
-
 mod hash;
 mod cache;
+
+use std::path::Path;
+use hash::PerceptualHash;
 
 /**
  * Prepare the library for work.
@@ -25,7 +26,7 @@ pub fn get_phashes(path: &Path) -> hash::PerceptualHashes {
 }
 
 pub fn get_ahash(path: &Path) -> u64 {
-    hash::get_ahash(&hash::prepare_image(path, &hash::HashType::Ahash, &hash::Precision::Medium))
+    hash::AHash::new(&path, &hash::Precision::Medium).get_hash()
 }
 
 pub fn get_dhash(path: &Path) -> u64 {
