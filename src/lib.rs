@@ -21,6 +21,16 @@ pub fn init() {
     }
 }
 
+/**
+ * Teardown for the library
+ */
+pub fn teardown() {
+    match cache::clear_cache() {
+        Ok(_) => {},
+        Err(e) => println!("Error: {}", e),
+    }
+}
+
 pub fn get_phashes(path: &Path) -> hash::PerceptualHashes {
     hash::get_perceptual_hashes(path, &hash::Precision::Medium)
 }
@@ -50,10 +60,10 @@ mod tests {
     use super::*;
     use std::fs;
     use std::path;
-    use hash;
+    use hash;   
 
     #[test]
-    fn can_get_test_images() {
+    fn test_can_get_test_images() {
         let paths = fs::read_dir(&path::Path::new("./test_images")).unwrap();
         let mut num_paths = 0;
         for path in paths {
@@ -79,10 +89,10 @@ mod tests {
 
     // Simple function for the unit tests to succinctly test a set of images
     // that are organized in the fashion of large->medium->small
-    fn test_imageset_hash<F: Fn(&hash::PreparedImage) -> u64>(
-        large_phash: PerceptualHash,
-        medium_phash: PerceptualHash,
-        small_phash: PerceptualHash,
+    fn test_imageset_hash(
+        large_phash: &hash::PerceptualHash,
+        medium_phash: &hash::PerceptualHash,
+        small_phash: &hash::PerceptualHash,
         expected_large_hash: u64,
         expected_medium_hash: u64,
         expected_small_hash: u64,
@@ -95,9 +105,9 @@ mod tests {
         let actual_small_hash = small_phash.get_hash();
 
         // println for the purpose of debugging
-        println!("{}: expected: {} actual: {}", large_path, expected_large_hash, actual_large_hash);
-        println!("{}: expected: {} actual: {}", medium_path, expected_medium_hash, actual_medium_hash);
-        println!("{}: expected: {} actual: {}", small_path, expected_small_hash, actual_small_hash);
+        println!("Large Image: expected: {} actual: {}", expected_large_hash, actual_large_hash);
+        println!("Medium Image: expected: {} actual: {}", expected_medium_hash, actual_medium_hash);
+        println!("Small Image: expected: {} actual: {}", expected_small_hash, actual_small_hash);
         
         let actual_large_medium_hamming = hash::calculate_hamming_distance(actual_large_hash, actual_medium_hash);
         let actual_large_small_hamming = hash::calculate_hamming_distance(actual_large_hash, actual_small_hash);
@@ -119,12 +129,15 @@ mod tests {
     }
 
     #[test]
-    fn confirm_ahash_results() {
+    fn test_confirm_ahash_results() {
+        // Prep_Cache
+        super::init();
+
         // Sample_01 tests
         test_imageset_hash(
-            hash::AHash::new(path::Path::new("./test_images/sample_01_large.jpg", &hash::Precision::Medium)),
-            hash::AHash::new(path::Path::new("./test_images/sample_01_medium.jpg", &hash::Precision::Medium)),
-            hash::AHash::new(path::Path::new("./test_images/sample_01_small.jpg", &hash::Precision::Medium)),
+            &hash::AHash::new(path::Path::new("./test_images/sample_01_large.jpg"), &hash::Precision::Medium),
+            &hash::AHash::new(path::Path::new("./test_images/sample_01_medium.jpg"), &hash::Precision::Medium),
+            &hash::AHash::new(path::Path::new("./test_images/sample_01_small.jpg"), &hash::Precision::Medium),
             857051991849750,
             857051991849750,
             857051991849750,
@@ -135,9 +148,9 @@ mod tests {
         
         // Sample_02 tests
         test_imageset_hash(
-            hash::AHash::new(path::Path::new("./test_images/sample_02_large.jpg", &hash::Precision::Medium)),
-            hash::AHash::new(path::Path::new("./test_images/sample_02_medium.jpg", &hash::Precision::Medium)),
-            hash::AHash::new(path::Path::new("./test_images/sample_02_small.jpg", &hash::Precision::Medium)),
+            &hash::AHash::new(path::Path::new("./test_images/sample_02_large.jpg"), &hash::Precision::Medium),
+            &hash::AHash::new(path::Path::new("./test_images/sample_02_medium.jpg"), &hash::Precision::Medium),
+            &hash::AHash::new(path::Path::new("./test_images/sample_02_small.jpg"), &hash::Precision::Medium),
             18446744073441116160,
             18446744073441116160,
             18446744073441116160,
@@ -147,9 +160,9 @@ mod tests {
         );
         // Sample_03 tests
         test_imageset_hash(
-            hash::AHash::new(path::Path::new("./test_images/sample_03_large.jpg", &hash::Precision::Medium)),
-            hash::AHash::new(path::Path::new("./test_images/sample_03_medium.jpg", &hash::Precision::Medium)),
-            hash::AHash::new(path::Path::new("./test_images/sample_03_small.jpg", &hash::Precision::Medium)),
+            &hash::AHash::new(path::Path::new("./test_images/sample_03_large.jpg"), &hash::Precision::Medium),
+            &hash::AHash::new(path::Path::new("./test_images/sample_03_medium.jpg"), &hash::Precision::Medium),
+            &hash::AHash::new(path::Path::new("./test_images/sample_03_small.jpg"), &hash::Precision::Medium),
             135670932300497406,
             135670932300497406,
             135670932300497406,
@@ -160,9 +173,9 @@ mod tests {
         
         // Sample_04 tests
         test_imageset_hash(
-            hash::AHash::new(path::Path::new("./test_images/sample_04_large.jpg", &hash::Precision::Medium)),
-            hash::AHash::new(path::Path::new("./test_images/sample_04_medium.jpg", &hash::Precision::Medium)),
-            hash::AHash::new(path::Path::new("./test_images/sample_04_small.jpg", &hash::Precision::Medium)),
+            &hash::AHash::new(path::Path::new("./test_images/sample_04_large.jpg"), &hash::Precision::Medium),
+            &hash::AHash::new(path::Path::new("./test_images/sample_04_medium.jpg"), &hash::Precision::Medium),
+            &hash::AHash::new(path::Path::new("./test_images/sample_04_small.jpg"), &hash::Precision::Medium),
             18446460933225054208,
             18446460933090836480,
             18446460933090836480,
@@ -170,15 +183,21 @@ mod tests {
             1u64,
             0u64
         );
+
+        // Clean_Cache
+        //super::teardown();
     }
 
     #[test]
-    fn confirm_dhash_results() {
+    fn test_confirm_dhash_results() {
+        // Prep_Cache
+        super::init();
+
         // Sample_01 tests
         test_imageset_hash(
-            hash::DHash::new(path::Path::new("./test_images/sample_01_large.jpg", &hash::Precision::Medium)),
-            hash::DHash::new(path::Path::new("./test_images/sample_01_medium.jpg", &hash::Precision::Medium)),
-            hash::DHash::new(path::Path::new("./test_images/sample_01_small.jpg", &hash::Precision::Medium)),
+            &hash::DHash::new(path::Path::new("./test_images/sample_01_large.jpg"), &hash::Precision::Medium),
+            &hash::DHash::new(path::Path::new("./test_images/sample_01_medium.jpg"), &hash::Precision::Medium),
+            &hash::DHash::new(path::Path::new("./test_images/sample_01_small.jpg"), &hash::Precision::Medium),
             7937395827556495926,
             7937395827556495926,
             7939647627370181174,
@@ -189,9 +208,9 @@ mod tests {
         
         // Sample_02 tests
         test_imageset_hash(
-            hash::DHash::new(path::Path::new("./test_images/sample_02_large.jpg", &hash::Precision::Medium)),
-            hash::DHash::new(path::Path::new("./test_images/sample_02_medium.jpg", &hash::Precision::Medium)),
-            hash::DHash::new(path::Path::new("./test_images/sample_02_small.jpg", &hash::Precision::Medium)),
+            &hash::DHash::new(path::Path::new("./test_images/sample_02_large.jpg"), &hash::Precision::Medium),
+            &hash::DHash::new(path::Path::new("./test_images/sample_02_medium.jpg"), &hash::Precision::Medium),
+            &hash::DHash::new(path::Path::new("./test_images/sample_02_small.jpg"), &hash::Precision::Medium),
             11009829669713008949,
             11009829670249879861,
             11009829669713008949,
@@ -201,9 +220,9 @@ mod tests {
         );
         // Sample_03 tests
         test_imageset_hash(
-            hash::DHash::new(path::Path::new("./test_images/sample_03_large.jpg", &hash::Precision::Medium)),
-            hash::DHash::new(path::Path::new("./test_images/sample_03_medium.jpg", &hash::Precision::Medium)),
-            hash::DHash::new(path::Path::new("./test_images/sample_03_small.jpg", &hash::Precision::Medium)),
+            &hash::DHash::new(path::Path::new("./test_images/sample_03_large.jpg"), &hash::Precision::Medium),
+            &hash::DHash::new(path::Path::new("./test_images/sample_03_medium.jpg"), &hash::Precision::Medium),
+            &hash::DHash::new(path::Path::new("./test_images/sample_03_small.jpg"), &hash::Precision::Medium),
             225528496439353286,
             225528496439353286,
             226654396346195908,
@@ -214,9 +233,9 @@ mod tests {
         
         // Sample_04 tests
         test_imageset_hash(
-            hash::DHash::new(path::Path::new("./test_images/sample_04_large.jpg", &hash::Precision::Medium)),
-            hash::DHash::new(path::Path::new("./test_images/sample_04_medium.jpg", &hash::Precision::Medium)),
-            hash::DHash::new(path::Path::new("./test_images/sample_04_small.jpg", &hash::Precision::Medium)),
+            &hash::DHash::new(path::Path::new("./test_images/sample_04_large.jpg"), &hash::Precision::Medium),
+            &hash::DHash::new(path::Path::new("./test_images/sample_04_medium.jpg"), &hash::Precision::Medium),
+            &hash::DHash::new(path::Path::new("./test_images/sample_04_small.jpg"), &hash::Precision::Medium),
             14620651386429567209,
             14620651386429567209,
             14620651386429567209,
@@ -224,15 +243,21 @@ mod tests {
             0u64,
             0u64
         );
+
+        // Clean_Cache
+        //super::teardown();
     }
     
     #[test]
-    fn confirm_phash_results() {
+    fn test_confirm_phash_results() {
+        // Prep_Cache
+        super::init();
+
         // Sample_01 tests
         test_imageset_hash(
-            hash::PHash::new(path::Path::new("./test_images/sample_01_large.jpg", &hash::Precision::Medium)),
-            hash::PHash::new(path::Path::new("./test_images/sample_01_medium.jpg", &hash::Precision::Medium)),
-            hash::PHash::new(path::Path::new("./test_images/sample_01_small.jpg", &hash::Precision::Medium)),
+            &hash::PHash::new(path::Path::new("./test_images/sample_01_large.jpg"), &hash::Precision::Medium),
+            &hash::PHash::new(path::Path::new("./test_images/sample_01_medium.jpg"), &hash::Precision::Medium),
+            &hash::PHash::new(path::Path::new("./test_images/sample_01_small.jpg"), &hash::Precision::Medium),
             72357778504597504,
             72357778504597504,
             72357778504597504,
@@ -243,9 +268,9 @@ mod tests {
         
         // Sample_02 tests
         test_imageset_hash(
-            hash::PHash::new(path::Path::new("./test_images/sample_02_large.jpg", &hash::Precision::Medium)),
-            hash::PHash::new(path::Path::new("./test_images/sample_02_medium.jpg", &hash::Precision::Medium)),
-            hash::PHash::new(path::Path::new("./test_images/sample_02_small.jpg", &hash::Precision::Medium)),
+            &hash::PHash::new(path::Path::new("./test_images/sample_02_large.jpg"), &hash::Precision::Medium),
+            &hash::PHash::new(path::Path::new("./test_images/sample_02_medium.jpg"), &hash::Precision::Medium),
+            &hash::PHash::new(path::Path::new("./test_images/sample_02_small.jpg"), &hash::Precision::Medium),
             5332332327550844928,
             5332332327550844928,
             5332332327550844928,
@@ -255,9 +280,9 @@ mod tests {
         );
         // Sample_03 tests
         test_imageset_hash(
-            hash::PHash::new(path::Path::new("./test_images/sample_03_large.jpg", &hash::Precision::Medium)),
-            hash::PHash::new(path::Path::new("./test_images/sample_03_medium.jpg", &hash::Precision::Medium)),
-            hash::PHash::new(path::Path::new("./test_images/sample_03_small.jpg", &hash::Precision::Medium)),
+            &hash::PHash::new(path::Path::new("./test_images/sample_03_large.jpg"), &hash::Precision::Medium),
+            &hash::PHash::new(path::Path::new("./test_images/sample_03_medium.jpg"), &hash::Precision::Medium),
+            &hash::PHash::new(path::Path::new("./test_images/sample_03_small.jpg"), &hash::Precision::Medium),
             6917529027641081856,
             6917529027641081856,
             6917529027641081856,
@@ -268,9 +293,9 @@ mod tests {
         
         // Sample_04 tests
         test_imageset_hash(
-            hash::PHash::new(path::Path::new("./test_images/sample_04_large.jpg", &hash::Precision::Medium)),
-            hash::PHash::new(path::Path::new("./test_images/sample_04_medium.jpg", &hash::Precision::Medium)),
-            hash::PHash::new(path::Path::new("./test_images/sample_04_small.jpg", &hash::Precision::Medium)),
+            &hash::PHash::new(path::Path::new("./test_images/sample_04_large.jpg"), &hash::Precision::Medium),
+            &hash::PHash::new(path::Path::new("./test_images/sample_04_medium.jpg"), &hash::Precision::Medium),
+            &hash::PHash::new(path::Path::new("./test_images/sample_04_small.jpg"), &hash::Precision::Medium),
             10997931646002397184,
             10997931646002397184,
             11142046834078253056,
@@ -278,5 +303,8 @@ mod tests {
             1u64,
             1u64
         );
+
+        // Clean_Cache
+        //super::teardown();
     }
 }

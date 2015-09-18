@@ -9,7 +9,7 @@ extern crate sha1;
 use self::image::ImageBuffer;
 use self::sha1::Sha1;
 use std::path::Path;
-use std::fs::{File, create_dir_all};
+use std::fs::{File, create_dir_all, remove_dir_all};
 use std::io::{Read, Error};
 use std::option::Option;
 use std::result::Result;
@@ -20,6 +20,10 @@ const CACHE_FILE_EXT: &'static str = "png";
 // Creates the required directories 
 pub fn prep_cache() -> Result<(), Error> {
     create_dir_all(CACHE_DIR)
+}
+
+pub fn clear_cache() -> Result<(), Error> {
+    remove_dir_all(CACHE_DIR)
 }
 
 /**
