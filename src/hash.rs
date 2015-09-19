@@ -298,6 +298,8 @@ impl<'a> PerceptualHash for PHash<'a> {
 
         // Perform the 2D DFT operation on our matrix
         calculate_2d_dft(&mut data_matrix);
+        // Store this DFT in the cache
+        cache::put_matrix_in_cache(&Path::new(self.prepared_image.orig_path),width as u32,&"dft",&data_matrix);
         
         // Only need the top left quadrant
         let target_width = (width / 4) as usize;

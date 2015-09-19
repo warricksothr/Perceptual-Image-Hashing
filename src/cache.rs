@@ -10,7 +10,7 @@ use self::image::ImageBuffer;
 use self::sha1::Sha1;
 use std::path::Path;
 use std::fs::{File, create_dir_all, remove_dir_all};
-use std::io::{Read, Error};
+use std::io::{Read, Error, Write};
 use std::option::Option;
 use std::result::Result;
 
@@ -61,8 +61,30 @@ pub fn put_image_in_cache(path: &Path, size: u32, image: &ImageBuffer<image::Lum
 /**
  * Expects a slice of slices that represents lines in the file
  */
-pub fn put_file_in_cache(path: &Path, size: u32, file_contents: &[&[u8]])  {
-
+pub fn put_matrix_in_cache(path: &Path, size: u32, extension: &str, file_contents: &Vec<Vec<f64>>)  {
+    let hash = get_file_hash(&path);
+    match hash {
+        Ok(sha1) => {
+            let cache_path_str = format!("{}/{}x{}_{}.{}",CACHE_DIR, size, size, sha1, extension);
+            let cached_path = Path::new(&cache_path_str);
+            // Save the file into the cache
+            match File::create(&cached_path) {
+                Ok(mut file) => {
+                    for row in file_contents {
+                        let mut row_str = row.iter().fold(String::new(), |acc, &item| acc + &format!("{},",item));
+                        //remove the last comma
+                        let desire_len = row_str.len()-1;
+                        row_str.truncate(desire_len);
+                        row_str.push_str("\n");
+                        file.write(&row_str.into_bytes());
+                    }
+                    file.flush();
+                },
+                Err(_) => {},
+            }
+        },
+        Err(e) =>  println!("Error: {}", e),
+    }
 }
 
 /**
@@ -94,6 +116,42 @@ pub fn get_image_from_cache(path: &Path, size: u32) -> Option<ImageBuffer<image:
         },
     }
 }
+
+/**
+ * Get a matrix out of the cache
+ */
+pub fn get_matrix_from_cache(path: &Path, size: u32, extension: &str) -> Option<Vec<Vec<f64>>> {
+    let hash = get_file_hash(&path);
+    match hash {
+        Ok(sha1) => {
+            // Check if the file exists in the cache
+            let cache_path_str = format!("{}/{}x{}_{}.{}",CACHE_DIR, size, size, sha1, extension);
+            let cached_path = Path::new(&cache_path_str);
+            // Try to open, if it does, then we can read the image in
+            match File::open(&cached_path) {
+                Ok(mut file) => {
+                    let mut matrix: Vec<Vec<f64>> = Vec::new();
+                    let mut matrix_data: Vec<u8> = Vec::new();
+                    file.read_to_end(&mut matrix_data);
+                    let matrix_data_str = String::from_utf8(matrix_data);
+                    //convert the matrix
+                    Some(matrix)
+                },
+                // Don't really care here, it just means an existing cached
+                // file doesn't exist, or can't be read.
+                Err(_) => {
+                    None
+                },
+            }
+        },
+        Err(e) => {
+            println!("Error: {}", e);
+            None
+        },
+    }
+}
+
+
 
 #[test]
 fn test_get_file_hash() {
