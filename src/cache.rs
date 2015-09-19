@@ -42,7 +42,7 @@ fn get_file_hash(path: &Path) -> Result<String, Error> {
 /**
  * Put an image buffer in the cache
  */
-pub fn put_in_cache(path: &Path, size: u32, image: &ImageBuffer<image::Luma<u8>, Vec<u8>>)  {
+pub fn put_image_in_cache(path: &Path, size: u32, image: &ImageBuffer<image::Luma<u8>, Vec<u8>>)  {
     let hash = get_file_hash(&path);
     match hash {
         Ok(sha1) => {
@@ -59,9 +59,16 @@ pub fn put_in_cache(path: &Path, size: u32, image: &ImageBuffer<image::Luma<u8>,
 }
 
 /**
+ * Expects a slice of slices that represents lines in the file
+ */
+pub fn put_file_in_cache(path: &Path, size: u32, file_contents: &[&[u8]])  {
+
+}
+
+/**
  * Get an image buffer out of the cache
  */
-pub fn get_from_cache(path: &Path, size: u32) -> Option<ImageBuffer<image::Luma<u8>, Vec<u8>>> {
+pub fn get_image_from_cache(path: &Path, size: u32) -> Option<ImageBuffer<image::Luma<u8>, Vec<u8>>> {
     let hash = get_file_hash(&path);
     match hash {
         Ok(sha1) => {

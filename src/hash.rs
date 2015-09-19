@@ -110,7 +110,7 @@ pub fn prepare_image<'a>(path: &'a Path, hash_type: &HashType, precision: &Preci
         _ => precision.get_size()
     };
     // Check if we have the already converted image in a cache and use that if possible.
-    match cache::get_from_cache(&path, size) {
+    match cache::get_image_from_cache(&path, size) {
         Some(image) => {
             PreparedImage { orig_path: &*image_path, image: image }
         },
@@ -119,7 +119,7 @@ pub fn prepare_image<'a>(path: &'a Path, hash_type: &HashType, precision: &Preci
             let image = image::open(path).unwrap();
             let small_image = image.resize_exact(size, size, FilterType::Lanczos3);
             let grey_image = small_image.to_luma();
-            cache::put_in_cache(&path, size, &grey_image);
+            cache::put_image_in_cache(&path, size, &grey_image);
             PreparedImage { orig_path: &*image_path, image: grey_image }
         },
     }
