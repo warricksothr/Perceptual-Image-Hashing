@@ -6,6 +6,8 @@
 
 The goal of this library is to offer a utility for calculating perceptual hashes of images for the purpose of comparing images for similarity
 
+  - [ ] Add DCT in addition to DFT and some additional wrappings around the perceptual hashing.
+
 # Examples
 
 To Be Added
