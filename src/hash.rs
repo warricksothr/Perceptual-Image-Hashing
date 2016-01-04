@@ -15,8 +15,7 @@ use self::image::{
     Pixel,
     FilterType
 };
-use self::dft::real;
-use self::complex::*;
+use self::dft::Transform;
 use cache;
 
 // Used to get ranges for the precision of rounding floats
@@ -287,9 +286,9 @@ impl<'a> PerceptualHash for PHash<'a> {
         
         // Get 2d data to 2d FFT/DFT
         let mut data_matrix: Vec<Vec<f64>> = Vec::new();
-        for x in (0..width) {
+        for x in 0..width {
             data_matrix.push(Vec::new());
-            for y in (0..height) {
+            for y in 0..height {
                 let pos_x = x as u32;
                 let pos_y = y as u32;
                 data_matrix[x].push(self.prepared_image.image.get_pixel(pos_x,pos_y).channels()[0] as f64);
@@ -307,8 +306,8 @@ impl<'a> PerceptualHash for PHash<'a> {
 
         //Calculate the mean
         let mut total = 0f64;
-        for x in (0..target_width) {
-            for y in (0..target_height) {
+        for x in 0..target_width {
+            for y in 0..target_height {
                 total += data_matrix[x][y];
             }
         }
@@ -316,9 +315,9 @@ impl<'a> PerceptualHash for PHash<'a> {
 
         // Calculating a hash based on the mean
         let mut hash = 0u64;
-        for x in (0..target_width) {
+        for x in 0..target_width {
     //        println!("Mean: {} Values: {:?}",mean,data_matrix[x]);
-            for y in (0..target_height) {
+            for y in 0..target_height {
                 if data_matrix[x][y] >= mean {
                     hash |= 1;
                     //println!("Pixel {} is >= {} therefore {:b}", pixel_sum, mean, hash);
@@ -365,8 +364,9 @@ fn calculate_2d_dft(data_matrix: &mut Vec<Vec<f64>>){
         
         // Perform the DCT on this column
         //println!("column[{}] before: {:?}", x, column);
-        real::forward(&mut column);
-        let complex_column = real::unpack(&column);
+        let forward_plan = dft::Plan::new(dft::Operation::Forward, column.len());
+        column.transform(&forward_plan);
+        let complex_column = dft::unpack(&column);
         //println!("column[{}] after: {:?}", x, complex_column);
         complex_data_matrix.push(complex_column);
     }
@@ -379,12 +379,13 @@ fn calculate_2d_dft(data_matrix: &mut Vec<Vec<f64>>){
         }
         // Perform DCT on the row
         //println!("row[{}] before: {:?}", y, row);
-        dft::complex::forward(&mut row);
+        let forward_plan = dft::Plan::new(dft::Operation::Forward, row.len());
+        row.transform(&forward_plan);
         //println!("row[{}] after: {:?}", y, row);
 
         // Put the row values back
         for x in 0..width {
-            data_matrix[x][y] = round_float(row[x].re());
+            data_matrix[x][y] = round_float(row[x].re);
         }
     }
 }
