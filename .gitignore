@@ -22,3 +22,6 @@ Cargo.lock
 
 # Ignore sublime workspace files
 *.sublime-workspace
+
+#Rustfmt backup files
+*.rs.bk

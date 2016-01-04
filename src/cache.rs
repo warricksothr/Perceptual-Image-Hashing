@@ -17,7 +17,7 @@ use std::result::Result;
 const CACHE_DIR: &'static str = "./.hash_cache";
 const CACHE_FILE_EXT: &'static str = "png";
 
-// Creates the required directories 
+// Creates the required directories
 pub fn prep_cache() -> Result<(), Error> {
     create_dir_all(CACHE_DIR)
 }
@@ -42,78 +42,92 @@ fn get_file_hash(path: &Path) -> Result<String, Error> {
 /**
  * Put an image buffer in the cache
  */
-pub fn put_image_in_cache(path: &Path, size: u32, image: &ImageBuffer<image::Luma<u8>, Vec<u8>>)  {
+pub fn put_image_in_cache(path: &Path, size: u32, image: &ImageBuffer<image::Luma<u8>, Vec<u8>>) {
     let hash = get_file_hash(&path);
     match hash {
         Ok(sha1) => {
-            let cache_path_str = format!("{}/{}x{}_{}.{}",CACHE_DIR, size, size, sha1, CACHE_FILE_EXT);
+            let cache_path_str = format!("{}/{}x{}_{}.{}",
+                                         CACHE_DIR,
+                                         size,
+                                         size,
+                                         sha1,
+                                         CACHE_FILE_EXT);
             let cached_path = Path::new(&cache_path_str);
             // Save the file into the cache
             match image.save(cached_path) {
-                Ok(_) => {},
+                Ok(_) => {}
                 Err(e) => println!("Error: {}", e),
             }
-        },
-        Err(e) =>  println!("Error: {}", e),
+        }
+        Err(e) => println!("Error: {}", e),
     }
 }
 
 /**
  * Expects a slice of slices that represents lines in the file
  */
-pub fn put_matrix_in_cache(path: &Path, size: u32, extension: &str, file_contents: &Vec<Vec<f64>>)  {
+pub fn put_matrix_in_cache(path: &Path,
+                           size: u32,
+                           extension: &str,
+                           file_contents: &Vec<Vec<f64>>) {
     let hash = get_file_hash(&path);
     match hash {
         Ok(sha1) => {
-            let cache_path_str = format!("{}/{}x{}_{}.{}",CACHE_DIR, size, size, sha1, extension);
+            let cache_path_str = format!("{}/{}x{}_{}.{}", CACHE_DIR, size, size, sha1, extension);
             let cached_path = Path::new(&cache_path_str);
             // Save the file into the cache
             match File::create(&cached_path) {
                 Ok(mut file) => {
                     for row in file_contents {
-                        let mut row_str = row.iter().fold(String::new(), |acc, &item| acc + &format!("{},",item));
-                        //remove the last comma
-                        let desire_len = row_str.len()-1;
+                        let mut row_str = row.iter().fold(String::new(),
+                                                          |acc, &item| acc + &format!("{},", item));
+                        // remove the last comma
+                        let desire_len = row_str.len() - 1;
                         row_str.truncate(desire_len);
                         row_str.push_str("\n");
                         file.write(&row_str.into_bytes());
                     }
                     file.flush();
-                },
-                Err(_) => {},
+                }
+                Err(_) => {}
             }
-        },
-        Err(e) =>  println!("Error: {}", e),
+        }
+        Err(e) => println!("Error: {}", e),
     }
 }
 
 /**
  * Get an image buffer out of the cache
  */
-pub fn get_image_from_cache(path: &Path, size: u32) -> Option<ImageBuffer<image::Luma<u8>, Vec<u8>>> {
+pub fn get_image_from_cache(path: &Path,
+                            size: u32)
+                            -> Option<ImageBuffer<image::Luma<u8>, Vec<u8>>> {
     let hash = get_file_hash(&path);
     match hash {
         Ok(sha1) => {
             // Check if the file exists in the cache
-            let cache_path_str = format!("{}/{}x{}_{}.{}",CACHE_DIR, size, size, sha1, CACHE_FILE_EXT);
+            let cache_path_str = format!("{}/{}x{}_{}.{}",
+                                         CACHE_DIR,
+                                         size,
+                                         size,
+                                         sha1,
+                                         CACHE_FILE_EXT);
             let cached_path = Path::new(&cache_path_str);
             // Try to open, if it does, then we can read the image in
             match File::open(&cached_path) {
                 Ok(_) => {
                     let image = image::open(&cached_path).unwrap();
                     Some(image.to_luma())
-                },
+                }
                 // Don't really care here, it just means an existing cached
                 // file doesn't exist, or can't be read.
-                Err(_) => {
-                    None
-                },
+                Err(_) => None,
             }
-        },
+        }
         Err(e) => {
             println!("Error: {}", e);
             None
-        },
+        }
     }
 }
 
@@ -125,7 +139,7 @@ pub fn get_matrix_from_cache(path: &Path, size: u32, extension: &str) -> Option<
     match hash {
         Ok(sha1) => {
             // Check if the file exists in the cache
-            let cache_path_str = format!("{}/{}x{}_{}.{}",CACHE_DIR, size, size, sha1, extension);
+            let cache_path_str = format!("{}/{}x{}_{}.{}", CACHE_DIR, size, size, sha1, extension);
             let cached_path = Path::new(&cache_path_str);
             // Try to open, if it does, then we can read the image in
             match File::open(&cached_path) {
@@ -134,20 +148,18 @@ pub fn get_matrix_from_cache(path: &Path, size: u32, extension: &str) -> Option<
                     let mut matrix_data: Vec<u8> = Vec::new();
                     file.read_to_end(&mut matrix_data);
                     let matrix_data_str = String::from_utf8(matrix_data);
-                    //convert the matrix
+                    // convert the matrix
                     Some(matrix)
-                },
+                }
                 // Don't really care here, it just means an existing cached
                 // file doesn't exist, or can't be read.
-                Err(_) => {
-                    None
-                },
+                Err(_) => None,
             }
-        },
+        }
         Err(e) => {
             println!("Error: {}", e);
             None
-        },
+        }
     }
 }
 
