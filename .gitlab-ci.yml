@@ -5,7 +5,9 @@ stages:
 test:
     stage: test
     script:
-        - cargo test --release
+        - rustc -V
+        - cargo -V
+        - cargo test
     only:
         - master
     tags:
