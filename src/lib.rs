@@ -8,13 +8,15 @@ mod cache;
 
 use std::path::Path;
 use hash::PerceptualHash;
+use std::ffi::CStr;
 
 /**
  * Prepare the library for work.
  *
  * Not performing this step may cause parts to fail.
  */
-pub fn init() {
+#[no_mangle]
+pub extern fn init() {
     match cache::prep_cache() {
         Ok(_) => {}
         Err(e) => println!("Error: {}", e),
@@ -24,7 +26,8 @@ pub fn init() {
 /**
  * Teardown for the library
  */
-pub fn teardown() {
+#[no_mangle]
+pub extern fn teardown() {
     match cache::clear_cache() {
         Ok(_) => {}
         Err(e) => println!("Error: {}", e),
@@ -35,12 +38,42 @@ pub fn get_phashes(path: &Path) -> hash::PerceptualHashes {
     hash::get_perceptual_hashes(path, &hash::Precision::Medium)
 }
 
+#[no_mangle]
+pub extern fn ext_get_ahash(path_str: &CStr) -> u64 {
+    let image_path = match path_str.to_str() {
+        Ok(result) => result,
+        Err(e) => "",
+    };
+    let path = Path::new(&image_path);
+    get_ahash(&path)
+}
+
 pub fn get_ahash(path: &Path) -> u64 {
     hash::AHash::new(&path, &hash::Precision::Medium).get_hash()
 }
 
+#[no_mangle]
+pub extern fn ext_get_dhash(path_str: &CStr) -> u64 {
+    let image_path = match path_str.to_str() {
+        Ok(result) => result,
+        Err(e) => "",
+    };
+    let path = Path::new(&image_path);
+    get_dhash(&path)
+}
+
 pub fn get_dhash(path: &Path) -> u64 {
     hash::DHash::new(&path, &hash::Precision::Medium).get_hash()
+}
+
+#[no_mangle]
+pub extern fn ext_get_phash(path_str: &CStr) -> u64 {
+    let image_path = match path_str.to_str() {
+        Ok(result) => result,
+        Err(e) => "",
+    };
+    let path = Path::new(&image_path);
+    get_phash(&path)
 }
 
 pub fn get_phash(path: &Path) -> u64 {
