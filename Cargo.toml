@@ -1,19 +1,18 @@
 [package]
 name = "pihash"
-version = "0.2.1"
+version = "0.2.2"
 authors = ["Drew Short <warrick@sothr.com>"]
 description = "A simple library for generating perceptual hashes for images and comparing images based on their perceptual hashes."
 repository = "https://github.com/warricksothr/Perceptual-Image-Hashing/"
 readme = "README.md"
 keywords = ["phash", "perceptual", "image", "comparison"]
-license = "MIT"
 license-file = "LICENSE"
 exclude = ["test_images/*"]
 
 [dependencies]
-docopt = "*"
-rustc-serialize = "*"
-image = "*"
-complex = "*"
-dft = "*"
-sha1 = "*"
+docopt = "0.6.78"
+rustc-serialize = "0.3.16"
+image = "0.6.0"
+complex = "0.8.0"
+dft = "0.4.1"
+sha1 = "0.1.1"
