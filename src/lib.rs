@@ -6,6 +6,8 @@
 mod hash;
 mod cache;
 
+extern crate libc;
+
 use std::path::Path;
 use hash::PerceptualHash;
 use std::ffi::CStr;
@@ -16,7 +18,7 @@ use std::ffi::CStr;
  * Not performing this step may cause parts to fail.
  */
 #[no_mangle]
-pub extern fn init() {
+pub extern "C" fn init() {
     match cache::prep_cache() {
         Ok(_) => {}
         Err(e) => println!("Error: {}", e),
@@ -27,7 +29,7 @@ pub extern fn init() {
  * Teardown for the library
  */
 #[no_mangle]
-pub extern fn teardown() {
+pub extern "C" fn teardown() {
     match cache::clear_cache() {
         Ok(_) => {}
         Err(e) => println!("Error: {}", e),
@@ -38,42 +40,13 @@ pub fn get_phashes(path: &Path) -> hash::PerceptualHashes {
     hash::get_perceptual_hashes(path, &hash::Precision::Medium)
 }
 
-#[no_mangle]
-pub extern fn ext_get_ahash(path_str: &CStr) -> u64 {
-    let image_path = match path_str.to_str() {
-        Ok(result) => result,
-        Err(e) => "",
-    };
-    let path = Path::new(&image_path);
-    get_ahash(&path)
-}
 
 pub fn get_ahash(path: &Path) -> u64 {
     hash::AHash::new(&path, &hash::Precision::Medium).get_hash()
 }
 
-#[no_mangle]
-pub extern fn ext_get_dhash(path_str: &CStr) -> u64 {
-    let image_path = match path_str.to_str() {
-        Ok(result) => result,
-        Err(e) => "",
-    };
-    let path = Path::new(&image_path);
-    get_dhash(&path)
-}
-
 pub fn get_dhash(path: &Path) -> u64 {
     hash::DHash::new(&path, &hash::Precision::Medium).get_hash()
-}
-
-#[no_mangle]
-pub extern fn ext_get_phash(path_str: &CStr) -> u64 {
-    let image_path = match path_str.to_str() {
-        Ok(result) => result,
-        Err(e) => "",
-    };
-    let path = Path::new(&image_path);
-    get_phash(&path)
 }
 
 pub fn get_phash(path: &Path) -> u64 {
@@ -82,6 +55,72 @@ pub fn get_phash(path: &Path) -> u64 {
 
 pub fn get_hamming_distance(hash1: u64, hash2: u64) -> u64 {
     hash::calculate_hamming_distance(hash1, hash2)
+}
+
+// External proxies for the get_*hash methods
+
+#[no_mangle]
+pub extern "C" fn ext_get_ahash(path_char: *const libc::c_char) -> u64 {
+    unsafe {
+        let path_str = CStr::from_ptr(path_char);
+        let image_path = match path_str.to_str() {
+            Ok(result) => result,
+            Err(e) => {
+                println!("Error: {}. Unable to parse '{}'",
+                         e,
+                         to_hex_string(path_str.to_bytes()));
+                panic!("Unable to parse path")
+            }
+        };
+        let path = Path::new(&image_path);
+        get_ahash(&path)
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn ext_get_dhash(path_char: *const libc::c_char) -> u64 {
+    unsafe {
+        let path_str = CStr::from_ptr(path_char);
+        let image_path = match path_str.to_str() {
+            Ok(result) => result,
+            Err(e) => {
+                println!("Error: {}. Unable to parse '{}'",
+                         e,
+                         to_hex_string(path_str.to_bytes()));
+                panic!("Unable to parse path")
+            }
+        };
+        let path = Path::new(&image_path);
+        get_dhash(&path)
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn ext_get_phash(path_char: *const libc::c_char) -> u64 {
+    unsafe {
+        let path_str = CStr::from_ptr(path_char);
+        let image_path = match path_str.to_str() {
+            Ok(result) => result,
+            Err(e) => {
+                println!("Error: {}. Unable to parse '{}'",
+                         e,
+                         to_hex_string(path_str.to_bytes()));
+                panic!("Unable to parse path")
+            }
+        };
+        let path = Path::new(&image_path);
+        get_phash(&path)
+    }
+}
+
+fn to_hex_string(bytes: &[u8]) -> String {
+    println!("length: {}", bytes.len());
+    let mut strs: Vec<String> = Vec::new();
+    for byte in bytes {
+        // println!("{:02x}", byte);
+        strs.push(format!("{:02x}", byte));
+    }
+    strs.join("\\x")
 }
 
 // Module for the tests

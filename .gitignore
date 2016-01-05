@@ -25,3 +25,7 @@ Cargo.lock
 
 #Rustfmt backup files
 *.rs.bk
+
+# FFI test binaries
+FFI-tests/*.so
+FFI-tests/*.o
