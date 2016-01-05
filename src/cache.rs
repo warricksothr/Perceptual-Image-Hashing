@@ -5,9 +5,14 @@
 
 extern crate image;
 extern crate sha1;
+extern crate flate2;
 
 use self::image::ImageBuffer;
 use self::sha1::Sha1;
+use self::flate2::Compression;
+use self::flate2::write::ZlibEncoder;
+use self::flate2::read::ZlibDecoder;
+use std::str::FromStr;
 use std::path::Path;
 use std::fs::{File, create_dir_all, remove_dir_all};
 use std::io::{Read, Error, Write};
@@ -78,6 +83,7 @@ pub fn put_matrix_in_cache(path: &Path,
             // Save the file into the cache
             match File::create(&cached_path) {
                 Ok(mut file) => {
+                    let mut compressor = ZlibEncoder::new(Vec::new(), Compression::Default);
                     for row in file_contents {
                         let mut row_str = row.iter().fold(String::new(),
                                                           |acc, &item| acc + &format!("{},", item));
@@ -85,8 +91,13 @@ pub fn put_matrix_in_cache(path: &Path,
                         let desire_len = row_str.len() - 1;
                         row_str.truncate(desire_len);
                         row_str.push_str("\n");
-                        file.write(&row_str.into_bytes());
+                        compressor.write(&row_str.into_bytes());
                     }
+                    let compressed_matrix = match compressor.finish() {
+                        Ok(data) => data,
+                        Err(e) => { println!("Unable to compress matrix data: {}", e); return },
+                    };
+                    file.write(&compressed_matrix);
                     file.flush();
                 }
                 Err(_) => {}
@@ -144,11 +155,19 @@ pub fn get_matrix_from_cache(path: &Path, size: u32, extension: &str) -> Option<
             // Try to open, if it does, then we can read the image in
             match File::open(&cached_path) {
                 Ok(mut file) => {
-                    let mut matrix: Vec<Vec<f64>> = Vec::new();
-                    let mut matrix_data: Vec<u8> = Vec::new();
-                    file.read_to_end(&mut matrix_data);
-                    let matrix_data_str = String::from_utf8(matrix_data);
+                    let mut compressed_matrix_data: Vec<u8> = Vec::new();
+                    let mut decoder = ZlibDecoder::new(&file);
+                    let mut matrix_data_str = String::new();
+                    match decoder.read_to_string(&mut matrix_data_str) {
+                        Ok(_) => {},
+                        Err(e) => { println!("Unable to decompress matrix: {}",e); return None }
+                    };
                     // convert the matrix
+                    let matrix: Vec<Vec<f64>> = matrix_data_str.trim().split("\n")
+                                                                .map(|line| line.split(",")
+                                                                                .map(|f| f64::from_str(f).unwrap()).collect())
+                                                                .collect();
+
                     Some(matrix)
                 }
                 // Don't really care here, it just means an existing cached

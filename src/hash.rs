@@ -294,24 +294,33 @@ impl<'a> PerceptualHash for PHash<'a> {
         let height = self.prepared_image.image.height() as usize;
 
         // Get 2d data to 2d FFT/DFT
+        // Either from the cache or calculate it
+        // Pretty fast already, so caching doesn't make a huge difference
+        // Atleast compared to opening and processing the images
         let mut data_matrix: Vec<Vec<f64>> = Vec::new();
-        for x in 0..width {
-            data_matrix.push(Vec::new());
-            for y in 0..height {
-                let pos_x = x as u32;
-                let pos_y = y as u32;
-                data_matrix[x]
-                    .push(self.prepared_image.image.get_pixel(pos_x, pos_y).channels()[0] as f64);
-            }
-        }
+        match cache::get_matrix_from_cache(&Path::new(self.prepared_image.orig_path), width as u32, &"dft") {   
+            Some(matrix) => data_matrix = matrix,
+            None => {
+                //Preparing the results
+                for x in 0..width {
+                    data_matrix.push(Vec::new());
+                    for y in 0..height {
+                        let pos_x = x as u32;
+                        let pos_y = y as u32;
+                        data_matrix[x]
+                            .push(self.prepared_image.image.get_pixel(pos_x, pos_y).channels()[0] as f64);
+                    }
+                }
 
-        // Perform the 2D DFT operation on our matrix
-        calculate_2d_dft(&mut data_matrix);
-        // Store this DFT in the cache
-        cache::put_matrix_in_cache(&Path::new(self.prepared_image.orig_path),
+                // Perform the 2D DFT operation on our matrix
+                calculate_2d_dft(&mut data_matrix);
+                // Store this DFT in the cache
+                cache::put_matrix_in_cache(&Path::new(self.prepared_image.orig_path),
                                    width as u32,
                                    &"dft",
                                    &data_matrix);
+            },
+        }
 
         // Only need the top left quadrant
         let target_width = (width / 4) as usize;
