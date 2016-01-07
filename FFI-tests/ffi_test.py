@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 from ctypes import *
-from _ffi_test_py import ffi, lib
 
 large_image1_path = "test_images/sample_01_large.jpg".encode(encoding="utf-8")
 medium_image1_path = "test_images/sample_01_medium.jpg".encode(encoding="utf-8")
@@ -19,9 +18,12 @@ test_images=[large_image1_path, medium_image1_path, small_image1_path,large_imag
 
 def unsigned64(number):
 	#return c_ulonglong(number).value
-	return bin(number)
+	return c_ulonglong(number).value
 
 print("starting ffi test")
+
+# Load the shared library
+lib = cdll.LoadLibrary("libpihash.so")
 
 #initialize the library
 lib.init()
@@ -31,10 +33,10 @@ lib.init()
 #print('\\x'+'\\x'.join('{:02x}'.format(x) for x in large_image_path))
 
 for image in test_images:
-    print("Requesting hashes for:", image)
-    print("ahash:",unsigned64(lib.ext_get_ahash(image)))
-    print("dhash:",unsigned64(lib.ext_get_dhash(image)))
-    print("phash:",unsigned64(lib.ext_get_phash(image)))
+    print("Requesting hashes for: %s"% image)
+    print("ahash: %i"% lib.ext_get_ahash(image))
+    print("dhash: %i"% lib.ext_get_dhash(image))
+    print("phash: %i"% lib.ext_get_phash(image))
 
 # Do cleanup
 #lib.teardown()

@@ -72,8 +72,9 @@ int main() {
             //printf("Path: %s\n", imagePath);
             
             // Visually proving that the bytes stored are the correct representation
-            print_ustr_bytes(imagePath);
-            
+            //print_ustr_bytes(imagePath);
+            printf("Image: %s\n",imagePath);
+
             // Printing information about the hashes of the provided images
             uint64_t imageAhash = get_ahash(imagePath);
             uint64_t imageDhash = get_dhash(imagePath);
@@ -84,6 +85,7 @@ int main() {
             printf("phash: %llu \n", imagePhash);
             
             //cleanup
+            memset(imagePath,0,100);
             free(imagePath);
         }
     }
@@ -101,5 +103,6 @@ void print_ustr_bytes(const char str[]) {
         sprintf(&strBuf[i*4], "\\x%02X", str[i]);
     }
     printf("String: '%s' -> Bytes: '%s'\n" , str, strBuf);
+    memset(strBuf,0,strLen*4);
     free(strBuf);
 }
