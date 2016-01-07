@@ -3,7 +3,6 @@
 #include <stdint.h>
 #include <dlfcn.h>
 #include <string.h>
-#include <wchar.h>
 
 /* function declaration */
 void print_ustr_bytes(const char []);
