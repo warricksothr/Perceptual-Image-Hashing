@@ -3,23 +3,48 @@
 #include <stdint.h>
 #include <dlfcn.h>
 #include <string.h>
+#include <wchar.h>
 
 /* function declaration */
-void print_str_bytes(const char []);
+void print_ustr_bytes(const char []);
 
 int main() {
     void *lib;
+    
+    // declaration for the external functions used
+    void (*init)();
+    void (*teardown)();
     uint64_t (*get_ahash)(const char *);
     uint64_t (*get_dhash)(const char *);
     uint64_t (*get_phash)(const char *);
 
-    static const char largePathStr[] = { 0x74,0x65,0x73,0x74,0x5F,0x69,0x6D,0x61,0x67,0x65,0x73,0x2F,0x73,0x61,0x6D,0x70,0x6C,0x65,0x5F,0x30,0x31,0x5F,0x6C,0x61,0x72,0x67,0x65,0x2E,0x6A,0x70,0x67,0x00 };
-    //print_str_bytes(largePathStr);
-    static const char mediumPathStr[] = { 0x74,0x65,0x73,0x74,0x5F,0x69,0x6D,0x61,0x67,0x65,0x73,0x2F,0x73,0x61,0x6D,0x70,0x6C,0x65,0x5F,0x30,0x31,0x5F,0x6D,0x65,0x64,0x69,0x75,0x6D,0x2E,0x6A,0x70,0x67,0x00 };
-    //print_str_bytes(mediumPathStr);
-    static const char smallPathStr[] = { 0x74,0x65,0x73,0x74,0x5F,0x69,0x6D,0x61,0x67,0x65,0x73,0x2F,0x73,0x61,0x6D,0x70,0x6C,0x65,0x5F,0x30,0x31,0x5F,0x73,0x6D,0x61,0x6C,0x6C,0x2E,0x6A,0x70,0x67,0x00 };
-    //print_str_bytes(smallPathStr);
+    //test image locations
+    static const char largePathStr[] = u8"test_images/sample_01_large.jpg";
+    static const char mediumPathStr[] = u8"test_images/sample_01_medium.jpg";
+    static const char smallPathStr[] = u8"test_images/sample_01_small.jpg";
+  
+    static const char image1PathStr[] = u8"test_images/sample_01_";
+    static const char image2PathStr[] = u8"test_images/sample_02_";
+    static const char image3PathStr[] = u8"test_images/sample_03_";
+    
+    // Array of pointers to the base image paths to test
+    //static const char *imagesSet[] = { image1PathStr, image2PathStr, image3PathStr };
+    static const char *imagesSet[] = { image1PathStr, image2PathStr, image3PathStr };
+    static const int imageSetSize = 3;
 
+    // designators for the image sizes
+    static const char largeImageSizeStr[] = u8"large";
+    static const char mediumImageSizeStr[] = u8"medium";
+    static const char smallImageSizeStr[] = u8"small";
+
+    // Array of pointers to the images sizes
+    static const char *imageSizesSet[] = { largeImageSizeStr, mediumImageSizeStr, smallImageSizeStr };
+    static int imageSizesSetSize = 3;
+
+    // Image extension
+    static const char imageExtensionStr[] = u8".jpg";
+
+    // Pointers that the external function call need
     const char *largePathPtr = &largePathStr[0];
     const char *mediumPathPtr = &mediumPathStr[0];
     const char *smallPathPtr = &smallPathStr[0];
@@ -28,45 +53,54 @@ int main() {
     lib = dlopen("./libpihash.so", RTLD_LAZY);
 
     //Registering the external functions
+    *(void **)(&init) = dlsym(lib,"init");
+    *(void **)(&teardown) = dlsym(lib,"teardown");
     *(void **)(&get_ahash) = dlsym(lib,"ext_get_ahash");
     *(void **)(&get_dhash) = dlsym(lib,"ext_get_dhash");
     *(void **)(&get_phash) = dlsym(lib,"ext_get_phash");
 
+    // Init the shared library
+    init();
 
-    uint64_t largeA = get_ahash(largePathPtr);
-    uint64_t largeD = get_dhash(largePathPtr);
-    uint64_t largeP = get_phash(largePathPtr);
+    // loop over the images and sizes to test
+    for (int i = 0; i < imageSetSize; i++) {
+        for (int j = 0; j < imageSizesSetSize; j++) {
+            char *imagePath = malloc(100);
+            // Getting the correct path
+            strcat(imagePath, imagesSet[i]);
+            strcat(imagePath, imageSizesSet[j]);
+            strcat(imagePath, imageExtensionStr);
+            //printf("Path: %s\n", imagePath);
+            
+            // Visually proving that the bytes stored are the correct representation
+            print_ustr_bytes(imagePath);
+            
+            // Printing information about the hashes of the provided images
+            uint64_t imageAhash = get_ahash(imagePath);
+            uint64_t imageDhash = get_dhash(imagePath);
+            uint64_t imagePhash = get_phash(imagePath);
+            
+            printf("ahash: %llu \n", imageAhash);
+            printf("dhash: %llu \n", imageDhash);
+            printf("phash: %llu \n", imagePhash);
+            
+            //cleanup
+            free(imagePath);
+        }
+    }
 
-    uint64_t mediumA = get_ahash(mediumPathPtr);
-    uint64_t mediumD = get_dhash(mediumPathPtr);
-    uint64_t mediumP = get_phash(mediumPathPtr);
-
-    uint64_t smallA = get_ahash(smallPathPtr);
-    uint64_t smallD = get_dhash(smallPathPtr);
-    uint64_t smallP = get_phash(smallPathPtr);
-
-    printf("Large_Test_AHash: %llu \n", largeA);
-    printf("Large_Test_DHash: %llu \n", largeD);
-    printf("Large_Test_PHash: %llu \n", largeP);
-    printf("Medium_Test_AHash: %llu \n", mediumA);
-    printf("Medium_Test_DHash: %llu \n", mediumD);
-    printf("Medium_Test_PHash: %llu \n", mediumP);
-    printf("Small_Test_AHash: %llu \n", smallA);
-    printf("Small_Test_DHash: %llu \n", smallD);
-    printf("Small_Test_PHash: %llu \n", smallP);
-
+    // Closing the shared library reference
     if (lib != NULL ) dlclose(lib);
     return EXIT_SUCCESS;
 }
 
-void print_str_bytes(const char str[]) {
+void print_ustr_bytes(const char str[]) {
     int strLen = strlen(str);
-    printf("Length: %u \n",strLen*2);
-    char* strBuf =  (char*) malloc(strLen);
+    //printf("Length: %u \n",strLen*2);
+    char *strBuf = malloc(strLen*4);
     for(int i = 0; i <= strLen; i++) {
-        int j = i * 2;
-        printf("%c",str[i]);
-        sprintf(&strBuf[j], "%02X", str[i]);
+        sprintf(&strBuf[i*4], "\\x%02X", str[i]);
     }
-    printf("\nBytes: %s \n" , strBuf);
+    printf("String: '%s' -> Bytes: '%s'\n" , str, strBuf);
+    free(strBuf);
 }
