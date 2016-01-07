@@ -8,6 +8,9 @@
 *.rlib
 *.dll
 
+# logging files
+*.log
+
 # Executables
 *.exe
 
