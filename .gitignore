@@ -22,6 +22,7 @@ Cargo.lock
 
 # Ignore sublime workspace files
 *.sublime-workspace
+*.sublime-project
 
 #Rustfmt backup files
 *.rs.bk
@@ -29,3 +30,5 @@ Cargo.lock
 # FFI test binaries
 FFI-tests/*.so
 FFI-tests/*.o
+FFI-tests/*.out
+FFI-tests/_*.c

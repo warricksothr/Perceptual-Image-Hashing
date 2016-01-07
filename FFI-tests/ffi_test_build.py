@@ -5,16 +5,15 @@
 from cffi import FFI
 ffi = FFI()
 
-ffi.set_source("_ffi_test_py",
-        """
-        #include <dlfcn.h>
-        """,
-        libraries=["pihash"],
-        library_dirs=["."]
-        )
+ffi.set_source("_ffi_test_py"
+    ,"""
+    #include <stdint.h>
+    """
+    ,libraries=["pihash"]
+    ,library_dirs=["."]
+)
 
 ffi.cdef("""
-    
     void init();
     void teardown();
     uint64_t ext_get_ahash(const char *);
