@@ -61,34 +61,36 @@ int main() {
     // Init the shared library
     init();
 
+    //temp buffer for the path
+    char *imagePathBuffer = malloc(100);
     // loop over the images and sizes to test
     for (int i = 0; i < imageSetSize; i++) {
         for (int j = 0; j < imageSizesSetSize; j++) {
-            char *imagePath = malloc(100);
+            // Make sure the buffer is clean before using it
+            memset(imagePathBuffer,0,100);
             // Getting the correct path
-            strcat(imagePath, imagesSet[i]);
-            strcat(imagePath, imageSizesSet[j]);
-            strcat(imagePath, imageExtensionStr);
+            strcat(imagePathBuffer, imagesSet[i]);
+            strcat(imagePathBuffer, imageSizesSet[j]);
+            strcat(imagePathBuffer, imageExtensionStr);
             //printf("Path: %s\n", imagePath);
             
             // Visually proving that the bytes stored are the correct representation
             //print_ustr_bytes(imagePath);
-            printf("Image: %s\n",imagePath);
+            printf("Image: %s\n",imagePathBuffer);
 
             // Printing information about the hashes of the provided images
-            uint64_t imageAhash = get_ahash(imagePath);
-            uint64_t imageDhash = get_dhash(imagePath);
-            uint64_t imagePhash = get_phash(imagePath);
+            uint64_t imageAhash = get_ahash(imagePathBuffer);
+            uint64_t imageDhash = get_dhash(imagePathBuffer);
+            uint64_t imagePhash = get_phash(imagePathBuffer);
             
             printf("ahash: %llu \n", imageAhash);
             printf("dhash: %llu \n", imageDhash);
             printf("phash: %llu \n", imagePhash);
-            
-            //cleanup
-            memset(imagePath,0,100);
-            free(imagePath);
         }
-    }
+    } 
+    //cleanup and close the buffer
+    memset(imagePathBuffer,0,100);
+    free(imagePathBuffer);
 
     // Closing the shared library reference
     if (lib != NULL ) dlclose(lib);
