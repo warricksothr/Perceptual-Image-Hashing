@@ -18,13 +18,9 @@ int main() {
     uint64_t (*get_phash)(const char *);
 
     //test image locations
-    static const char largePathStr[] = u8"test_images/sample_01_large.jpg";
-    static const char mediumPathStr[] = u8"test_images/sample_01_medium.jpg";
-    static const char smallPathStr[] = u8"test_images/sample_01_small.jpg";
-  
-    static const char image1PathStr[] = u8"test_images/sample_01_";
-    static const char image2PathStr[] = u8"test_images/sample_02_";
-    static const char image3PathStr[] = u8"test_images/sample_03_";
+    static const char image1PathStr[] = u8"../test_images/sample_01_";
+    static const char image2PathStr[] = u8"../test_images/sample_02_";
+    static const char image3PathStr[] = u8"../test_images/sample_03_";
     
     // Array of pointers to the base image paths to test
     //static const char *imagesSet[] = { image1PathStr, image2PathStr, image3PathStr };
@@ -42,11 +38,6 @@ int main() {
 
     // Image extension
     static const char imageExtensionStr[] = u8".jpg";
-
-    // Pointers that the external function call need
-    const char *largePathPtr = &largePathStr[0];
-    const char *mediumPathPtr = &mediumPathStr[0];
-    const char *smallPathPtr = &smallPathStr[0];
 
     // Loading the external library
     lib = dlopen("./libpihash.so", RTLD_LAZY);
