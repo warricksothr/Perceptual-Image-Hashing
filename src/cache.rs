@@ -47,7 +47,10 @@ fn get_file_hash(path: &Path) -> Result<String, Error> {
 /**
  * Put an image buffer in the cache
  */
-pub fn put_image_in_cache(path: &Path, size: u32, image: &ImageBuffer<image::Luma<u8>, Vec<u8>>) {
+pub fn put_image_in_cache(path: &Path,
+                          size: u32,
+                          image: &ImageBuffer<image::Luma<u8>, Vec<u8>>)
+                          -> Result<bool, Error> {
     let hash = get_file_hash(&path);
     match hash {
         Ok(sha1) => {
@@ -61,11 +64,18 @@ pub fn put_image_in_cache(path: &Path, size: u32, image: &ImageBuffer<image::Lum
             // Save the file into the cache
             match image.save(cached_path) {
                 Ok(_) => {}
-                Err(e) => println!("Error: {}", e),
+                Err(e) => {
+                    println!("Error: {}", e);
+                    return Err(e);
+                }
             }
         }
-        Err(e) => println!("Error: {}", e),
+        Err(e) => {
+            println!("Error: {}", e);
+            return Err(e);
+        }
     }
+    Ok(true)
 }
 
 /**
@@ -74,7 +84,8 @@ pub fn put_image_in_cache(path: &Path, size: u32, image: &ImageBuffer<image::Lum
 pub fn put_matrix_in_cache(path: &Path,
                            size: u32,
                            extension: &str,
-                           file_contents: &Vec<Vec<f64>>) {
+                           file_contents: &Vec<Vec<f64>>)
+                           -> Result<bool, Error> {
     let hash = get_file_hash(&path);
     match hash {
         Ok(sha1) => {
@@ -91,20 +102,29 @@ pub fn put_matrix_in_cache(path: &Path,
                         let desire_len = row_str.len() - 1;
                         row_str.truncate(desire_len);
                         row_str.push_str("\n");
-                        compressor.write(&row_str.into_bytes());
+                        try!(compressor.write(&row_str.into_bytes()));
                     }
                     let compressed_matrix = match compressor.finish() {
                         Ok(data) => data,
-                        Err(e) => { println!("Unable to compress matrix data: {}", e); return },
+                        Err(e) => {
+                            println!("Unable to compress matrix data: {}", e);
+                            return Err(e);
+                        }
                     };
-                    file.write(&compressed_matrix);
-                    file.flush();
+                    try!(file.write(&compressed_matrix));
+                    try!(file.flush());
                 }
-                Err(_) => {}
+                Err(e) => {
+                    return Err(e);
+                }
             }
         }
-        Err(e) => println!("Error: {}", e),
+        Err(e) => {
+            println!("Error: {}", e);
+            return Err(e);
+        }
     }
+    Ok(true)
 }
 
 /**
@@ -154,19 +174,27 @@ pub fn get_matrix_from_cache(path: &Path, size: u32, extension: &str) -> Option<
             let cached_path = Path::new(&cache_path_str);
             // Try to open, if it does, then we can read the image in
             match File::open(&cached_path) {
-                Ok(mut file) => {
-                    let mut compressed_matrix_data: Vec<u8> = Vec::new();
+                Ok(file) => {
                     let mut decoder = ZlibDecoder::new(&file);
                     let mut matrix_data_str = String::new();
                     match decoder.read_to_string(&mut matrix_data_str) {
-                        Ok(_) => {},
-                        Err(e) => { println!("Unable to decompress matrix: {}",e); return None }
+                        Ok(_) => {}
+                        Err(e) => {
+                            println!("Unable to decompress matrix: {}", e);
+                            return None;
+                        }
                     };
                     // convert the matrix
-                    let matrix: Vec<Vec<f64>> = matrix_data_str.trim().split("\n")
-                                                                .map(|line| line.split(",")
-                                                                                .map(|f| f64::from_str(f).unwrap()).collect())
-                                                                .collect();
+                    let matrix: Vec<Vec<f64>> = matrix_data_str.trim()
+                                                               .split("\n")
+                                                               .map(|line| {
+                                                                   line.split(",")
+                                                                       .map(|f| {
+                                                                           f64::from_str(f).unwrap()
+                                                                       })
+                                                                       .collect()
+                                                               })
+                                                               .collect();
 
                     Some(matrix)
                 }

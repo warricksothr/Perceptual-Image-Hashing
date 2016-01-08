@@ -60,7 +60,7 @@ pub fn get_hamming_distance(hash1: u64, hash2: u64) -> u64 {
 // External proxies for the get_*hash methods
 
 #[no_mangle]
-pub extern "C" fn ext_get_ahash(path_char: *const libc::c_char) -> u64 {
+pub extern "C" fn ext_get_ahash(path_char: *const libc::c_char) -> libc::uint64_t {
     unsafe {
         let path_str = CStr::from_ptr(path_char);
         let image_path = match path_str.to_str() {
@@ -78,7 +78,7 @@ pub extern "C" fn ext_get_ahash(path_char: *const libc::c_char) -> u64 {
 }
 
 #[no_mangle]
-pub extern "C" fn ext_get_dhash(path_char: *const libc::c_char) -> u64 {
+pub extern "C" fn ext_get_dhash(path_char: *const libc::c_char) -> libc::uint64_t {
     unsafe {
         let path_str = CStr::from_ptr(path_char);
         let image_path = match path_str.to_str() {
@@ -96,7 +96,7 @@ pub extern "C" fn ext_get_dhash(path_char: *const libc::c_char) -> u64 {
 }
 
 #[no_mangle]
-pub extern "C" fn ext_get_phash(path_char: *const libc::c_char) -> u64 {
+pub extern "C" fn ext_get_phash(path_char: *const libc::c_char) -> libc::uint64_t {
     unsafe {
         let path_str = CStr::from_ptr(path_char);
         let image_path = match path_str.to_str() {

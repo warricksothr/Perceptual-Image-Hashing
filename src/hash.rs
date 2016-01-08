@@ -119,7 +119,10 @@ pub fn prepare_image<'a>(path: &'a Path,
             let image = image::open(path).unwrap();
             let small_image = image.resize_exact(size, size, FilterType::Lanczos3);
             let grey_image = small_image.to_luma();
-            cache::put_image_in_cache(&path, size, &grey_image);
+            match cache::put_image_in_cache(&path, size, &grey_image) {
+                Ok(_) => {}
+                Err(e) => println!("Unable to store image in cache. {}", e),
+            };
             PreparedImage {
                 orig_path: &*image_path,
                 image: grey_image,
@@ -298,28 +301,36 @@ impl<'a> PerceptualHash for PHash<'a> {
         // Pretty fast already, so caching doesn't make a huge difference
         // Atleast compared to opening and processing the images
         let mut data_matrix: Vec<Vec<f64>> = Vec::new();
-        match cache::get_matrix_from_cache(&Path::new(self.prepared_image.orig_path), width as u32, &"dft") {   
+        match cache::get_matrix_from_cache(&Path::new(self.prepared_image.orig_path),
+                                           width as u32,
+                                           &"dft") {
             Some(matrix) => data_matrix = matrix,
             None => {
-                //Preparing the results
+                // Preparing the results
                 for x in 0..width {
                     data_matrix.push(Vec::new());
                     for y in 0..height {
                         let pos_x = x as u32;
                         let pos_y = y as u32;
                         data_matrix[x]
-                            .push(self.prepared_image.image.get_pixel(pos_x, pos_y).channels()[0] as f64);
+                            .push(self.prepared_image
+                                      .image
+                                      .get_pixel(pos_x, pos_y)
+                                      .channels()[0] as f64);
                     }
                 }
 
                 // Perform the 2D DFT operation on our matrix
                 calculate_2d_dft(&mut data_matrix);
                 // Store this DFT in the cache
-                cache::put_matrix_in_cache(&Path::new(self.prepared_image.orig_path),
-                                   width as u32,
-                                   &"dft",
-                                   &data_matrix);
-            },
+                match cache::put_matrix_in_cache(&Path::new(self.prepared_image.orig_path),
+                                                 width as u32,
+                                                 &"dft",
+                                                 &data_matrix) {
+                    Ok(_) => {}
+                    Err(e) => println!("Unable to store matrix in cache. {}", e),
+                };
+            }
         }
 
         // Only need the top left quadrant
