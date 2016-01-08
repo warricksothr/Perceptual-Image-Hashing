@@ -1,18 +1,19 @@
 #!/usr/bin/env python3
 
 from ctypes import *
+import os
 
-large_image1_path = "test_images/sample_01_large.jpg".encode(encoding="utf-8")
-medium_image1_path = "test_images/sample_01_medium.jpg".encode(encoding="utf-8")
-small_image1_path = "test_images/sample_01_small.jpg".encode(encoding="utf-8")
+large_image1_path = "../test_images/sample_01_large.jpg".encode(encoding="utf-8")
+medium_image1_path = "../test_images/sample_01_medium.jpg".encode(encoding="utf-8")
+small_image1_path = "../test_images/sample_01_small.jpg".encode(encoding="utf-8")
 
-large_image2_path = "test_images/sample_02_large.jpg".encode(encoding="utf-8")
-medium_image2_path = "test_images/sample_02_medium.jpg".encode(encoding="utf-8")
-small_image2_path = "test_images/sample_02_small.jpg".encode(encoding="utf-8")
+large_image2_path = "../test_images/sample_02_large.jpg".encode(encoding="utf-8")
+medium_image2_path = "../test_images/sample_02_medium.jpg".encode(encoding="utf-8")
+small_image2_path = "../test_images/sample_02_small.jpg".encode(encoding="utf-8")
 
-large_image3_path = "test_images/sample_03_large.jpg".encode(encoding="utf-8")
-medium_image3_path = "test_images/sample_03_medium.jpg".encode(encoding="utf-8")
-small_image3_path = "test_images/sample_03_small.jpg".encode(encoding="utf-8")
+large_image3_path = "../test_images/sample_03_large.jpg".encode(encoding="utf-8")
+medium_image3_path = "../test_images/sample_03_medium.jpg".encode(encoding="utf-8")
+small_image3_path = "../test_images/sample_03_small.jpg".encode(encoding="utf-8")
 
 test_images=[large_image1_path, medium_image1_path, small_image1_path,large_image2_path, medium_image2_path, small_image2_path,large_image3_path, medium_image3_path, small_image3_path]
 
@@ -22,7 +23,14 @@ def unsigned64(number):
 print("starting ffi test")
 
 # Load the shared library
-lib = cdll.LoadLibrary("libpihash.so")
+lib = None
+if os.name == 'nt':
+	path = os.path.dirname(__file__) + "\\pihash.dll"
+	print(path)
+	lib = CDLL(path)
+else:
+	lib = cdll.LoadLibrary("libpihash.so")
+	
 
 # Setting the ctypes return type references for the foreign functions
 lib.ext_get_ahash.restype = c_ulonglong
