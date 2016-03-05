@@ -12,7 +12,7 @@ use std::path::Path;
 use std::f64;
 use self::image::{GenericImage, Pixel, FilterType};
 use self::dft::Transform;
-use cache;
+use cache::Cache;
 
 // Used to get ranges for the precision of rounding floats
 // Can round to 1 significant factor of precision
@@ -37,6 +37,7 @@ const FLOAT_PRECISION_MIN_5: f64 = f64::MIN / 100000_f64;
 pub struct PreparedImage<'a> {
     orig_path: &'a str,
     image: image::ImageBuffer<image::Luma<u8>, Vec<u8>>,
+    cache: &'a Cache<'a>,
 }
 
 /**
@@ -56,6 +57,7 @@ pub struct PerceptualHashes<'a> {
  * Medium aims for 64 bit precision
  * High aims for 128 bit precision
  */
+#[allow(dead_code)]
 pub enum Precision {
     Low,
     Medium,
@@ -99,7 +101,8 @@ pub enum HashType {
  */
 pub fn prepare_image<'a>(path: &'a Path,
                          hash_type: &HashType,
-                         precision: &Precision)
+                         precision: &Precision,
+                         cache: &'a Cache<'a>)
                          -> PreparedImage<'a> {
     let image_path = path.to_str().unwrap();
     let size: u32 = match *hash_type {
@@ -107,11 +110,12 @@ pub fn prepare_image<'a>(path: &'a Path,
         _ => precision.get_size(),
     };
     // Check if we have the already converted image in a cache and use that if possible.
-    match cache::get_image_from_cache(&path, size) {
+    match cache.get_image_from_cache(&path, size) {
         Some(image) => {
             PreparedImage {
                 orig_path: &*image_path,
                 image: image,
+                cache: &cache
             }
         }
         None => {
@@ -119,13 +123,14 @@ pub fn prepare_image<'a>(path: &'a Path,
             let image = image::open(path).unwrap();
             let small_image = image.resize_exact(size, size, FilterType::Lanczos3);
             let grey_image = small_image.to_luma();
-            match cache::put_image_in_cache(&path, size, &grey_image) {
+            match cache.put_image_in_cache(&path, size, &grey_image) {
                 Ok(_) => {}
                 Err(e) => println!("Unable to store image in cache. {}", e),
             };
             PreparedImage {
                 orig_path: &*image_path,
                 image: grey_image,
+                cache: &cache,
             }
         }
     }
@@ -134,11 +139,11 @@ pub fn prepare_image<'a>(path: &'a Path,
 /**
  * Get all perceptual hashes for an image
  */
-pub fn get_perceptual_hashes<'a>(path: &'a Path, precision: &Precision) -> PerceptualHashes<'a> {
+pub fn get_perceptual_hashes<'a>(path: &'a Path, precision: &Precision, cache: &Cache) -> PerceptualHashes<'a> {
     let image_path = path.to_str().unwrap();
-    let ahash = AHash::new(&path, &precision).get_hash();
-    let dhash = DHash::new(&path, &precision).get_hash();
-    let phash = PHash::new(&path, &precision).get_hash();
+    let ahash = AHash::new(&path, &precision, &cache).get_hash();
+    let dhash = DHash::new(&path, &precision, &cache).get_hash();
+    let phash = PHash::new(&path, &precision, &cache).get_hash();
     PerceptualHashes {
         orig_path: &*image_path,
         ahash: ahash,
@@ -149,6 +154,7 @@ pub fn get_perceptual_hashes<'a>(path: &'a Path, precision: &Precision) -> Perce
 
 /**
  * Calculate the number of bits different between two hashes
+ * Add to the PerceptualHashTrait
  */
 pub fn calculate_hamming_distance(hash1: u64, hash2: u64) -> u64 {
     // The binary xor of the two hashes should give us a number representing
@@ -175,8 +181,8 @@ pub struct AHash<'a> {
 }
 
 impl<'a> AHash<'a> {
-    pub fn new(path: &'a Path, precision: &Precision) -> Self {
-        AHash { prepared_image: Box::new(prepare_image(&path, &HashType::Ahash, &precision)) }
+    pub fn new(path: &'a Path, precision: &Precision, cache: &'a Cache) -> Self {
+        AHash { prepared_image: Box::new(prepare_image(&path, &HashType::Ahash, &precision, &cache)) }
     }
 }
 
@@ -226,8 +232,8 @@ pub struct DHash<'a> {
 }
 
 impl<'a> DHash<'a> {
-    pub fn new(path: &'a Path, precision: &Precision) -> Self {
-        DHash { prepared_image: Box::new(prepare_image(&path, &HashType::Dhash, &precision)) }
+    pub fn new(path: &'a Path, precision: &Precision, cache: &'a Cache) -> Self {
+        DHash { prepared_image: Box::new(prepare_image(&path, &HashType::Dhash, &precision, &cache)) }
     }
 }
 
@@ -278,8 +284,8 @@ pub struct PHash<'a> {
 }
 
 impl<'a> PHash<'a> {
-    pub fn new(path: &'a Path, precision: &Precision) -> Self {
-        PHash { prepared_image: Box::new(prepare_image(&path, &HashType::Phash, &precision)) }
+    pub fn new(path: &'a Path, precision: &Precision, cache: &'a Cache) -> Self {
+        PHash { prepared_image: Box::new(prepare_image(&path, &HashType::Phash, &precision, &cache)) }
     }
 }
 
@@ -301,9 +307,8 @@ impl<'a> PerceptualHash for PHash<'a> {
         // Pretty fast already, so caching doesn't make a huge difference
         // Atleast compared to opening and processing the images
         let mut data_matrix: Vec<Vec<f64>> = Vec::new();
-        match cache::get_matrix_from_cache(&Path::new(self.prepared_image.orig_path),
-                                           width as u32,
-                                           &"dft") {
+        match self.prepared_image.cache.get_matrix_from_cache(&Path::new(self.prepared_image.orig_path),
+                                           width as u32) {
             Some(matrix) => data_matrix = matrix,
             None => {
                 // Preparing the results
@@ -323,9 +328,8 @@ impl<'a> PerceptualHash for PHash<'a> {
                 // Perform the 2D DFT operation on our matrix
                 calculate_2d_dft(&mut data_matrix);
                 // Store this DFT in the cache
-                match cache::put_matrix_in_cache(&Path::new(self.prepared_image.orig_path),
+                match self.prepared_image.cache.put_matrix_in_cache(&Path::new(self.prepared_image.orig_path),
                                                  width as u32,
-                                                 &"dft",
                                                  &data_matrix) {
                     Ok(_) => {}
                     Err(e) => println!("Unable to store matrix in cache. {}", e),

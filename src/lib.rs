@@ -11,6 +11,9 @@ extern crate libc;
 use std::path::Path;
 use hash::PerceptualHash;
 use std::ffi::CStr;
+use cache::Cache;
+
+static LIB_CACHE: Cache<'static> = Cache { cache_dir: cache::CACHE_DIR };
 
 /**
  * Prepare the library for work.
@@ -19,7 +22,7 @@ use std::ffi::CStr;
  */
 #[no_mangle]
 pub extern "C" fn init() {
-    match cache::prep_cache() {
+    match LIB_CACHE.init() {
         Ok(_) => {}
         Err(e) => println!("Error: {}", e),
     }
@@ -30,27 +33,27 @@ pub extern "C" fn init() {
  */
 #[no_mangle]
 pub extern "C" fn teardown() {
-    match cache::clear_cache() {
+    match LIB_CACHE.clean() {
         Ok(_) => {}
         Err(e) => println!("Error: {}", e),
     }
 }
 
 pub fn get_phashes(path: &Path) -> hash::PerceptualHashes {
-    hash::get_perceptual_hashes(path, &hash::Precision::Medium)
+    hash::get_perceptual_hashes(path, &hash::Precision::Medium, &LIB_CACHE)
 }
 
 
 pub fn get_ahash(path: &Path) -> u64 {
-    hash::AHash::new(&path, &hash::Precision::Medium).get_hash()
+    hash::AHash::new(&path, &hash::Precision::Medium, &LIB_CACHE).get_hash()
 }
 
 pub fn get_dhash(path: &Path) -> u64 {
-    hash::DHash::new(&path, &hash::Precision::Medium).get_hash()
+    hash::DHash::new(&path, &hash::Precision::Medium, &LIB_CACHE).get_hash()
 }
 
 pub fn get_phash(path: &Path) -> u64 {
-    hash::PHash::new(&path, &hash::Precision::Medium).get_hash()
+    hash::PHash::new(&path, &hash::Precision::Medium, &LIB_CACHE).get_hash()
 }
 
 pub fn get_hamming_distance(hash1: u64, hash2: u64) -> u64 {
@@ -220,12 +223,12 @@ mod tests {
 
         // Sample_01 tests
         test_imageset_hash(&hash::AHash::new(path::Path::new("./test_images/sample_01_large.jpg"),
-                                             &hash::Precision::Medium),
+                                             &hash::Precision::Medium, &super::LIB_CACHE),
                            &hash::AHash::new(path::Path::new("./test_images/sample_01_medium.\
                                                               jpg"),
-                                             &hash::Precision::Medium),
+                                             &hash::Precision::Medium, &super::LIB_CACHE),
                            &hash::AHash::new(path::Path::new("./test_images/sample_01_small.jpg"),
-                                             &hash::Precision::Medium),
+                                             &hash::Precision::Medium, &super::LIB_CACHE),
                            857051991849750,
                            857051991849750,
                            857051991849750,
@@ -235,12 +238,12 @@ mod tests {
 
         // Sample_02 tests
         test_imageset_hash(&hash::AHash::new(path::Path::new("./test_images/sample_02_large.jpg"),
-                                             &hash::Precision::Medium),
+                                             &hash::Precision::Medium, &super::LIB_CACHE),
                            &hash::AHash::new(path::Path::new("./test_images/sample_02_medium.\
                                                               jpg"),
-                                             &hash::Precision::Medium),
+                                             &hash::Precision::Medium, &super::LIB_CACHE),
                            &hash::AHash::new(path::Path::new("./test_images/sample_02_small.jpg"),
-                                             &hash::Precision::Medium),
+                                             &hash::Precision::Medium, &super::LIB_CACHE),
                            18446744073441116160,
                            18446744073441116160,
                            18446744073441116160,
@@ -249,12 +252,12 @@ mod tests {
                            0u64);
         // Sample_03 tests
         test_imageset_hash(&hash::AHash::new(path::Path::new("./test_images/sample_03_large.jpg"),
-                                             &hash::Precision::Medium),
+                                             &hash::Precision::Medium, &super::LIB_CACHE),
                            &hash::AHash::new(path::Path::new("./test_images/sample_03_medium.\
                                                               jpg"),
-                                             &hash::Precision::Medium),
+                                             &hash::Precision::Medium, &super::LIB_CACHE),
                            &hash::AHash::new(path::Path::new("./test_images/sample_03_small.jpg"),
-                                             &hash::Precision::Medium),
+                                             &hash::Precision::Medium, &super::LIB_CACHE),
                            135670932300497406,
                            135670932300497406,
                            135670932300497406,
@@ -264,12 +267,12 @@ mod tests {
 
         // Sample_04 tests
         test_imageset_hash(&hash::AHash::new(path::Path::new("./test_images/sample_04_large.jpg"),
-                                             &hash::Precision::Medium),
+                                             &hash::Precision::Medium, &super::LIB_CACHE),
                            &hash::AHash::new(path::Path::new("./test_images/sample_04_medium.\
                                                               jpg"),
-                                             &hash::Precision::Medium),
+                                             &hash::Precision::Medium, &super::LIB_CACHE),
                            &hash::AHash::new(path::Path::new("./test_images/sample_04_small.jpg"),
-                                             &hash::Precision::Medium),
+                                             &hash::Precision::Medium, &super::LIB_CACHE),
                            18446460933225054208,
                            18446460933090836480,
                            18446460933090836480,
@@ -288,12 +291,12 @@ mod tests {
 
         // Sample_01 tests
         test_imageset_hash(&hash::DHash::new(path::Path::new("./test_images/sample_01_large.jpg"),
-                                             &hash::Precision::Medium),
+                                             &hash::Precision::Medium, &super::LIB_CACHE),
                            &hash::DHash::new(path::Path::new("./test_images/sample_01_medium.\
                                                               jpg"),
-                                             &hash::Precision::Medium),
+                                             &hash::Precision::Medium, &super::LIB_CACHE),
                            &hash::DHash::new(path::Path::new("./test_images/sample_01_small.jpg"),
-                                             &hash::Precision::Medium),
+                                             &hash::Precision::Medium, &super::LIB_CACHE),
                            7937395827556495926,
                            7937395827556495926,
                            7939647627370181174,
@@ -303,12 +306,12 @@ mod tests {
 
         // Sample_02 tests
         test_imageset_hash(&hash::DHash::new(path::Path::new("./test_images/sample_02_large.jpg"),
-                                             &hash::Precision::Medium),
+                                             &hash::Precision::Medium, &super::LIB_CACHE),
                            &hash::DHash::new(path::Path::new("./test_images/sample_02_medium.\
                                                               jpg"),
-                                             &hash::Precision::Medium),
+                                             &hash::Precision::Medium, &super::LIB_CACHE),
                            &hash::DHash::new(path::Path::new("./test_images/sample_02_small.jpg"),
-                                             &hash::Precision::Medium),
+                                             &hash::Precision::Medium, &super::LIB_CACHE),
                            11009829669713008949,
                            11009829670249879861,
                            11009829669713008949,
@@ -317,12 +320,12 @@ mod tests {
                            1u64);
         // Sample_03 tests
         test_imageset_hash(&hash::DHash::new(path::Path::new("./test_images/sample_03_large.jpg"),
-                                             &hash::Precision::Medium),
+                                             &hash::Precision::Medium, &super::LIB_CACHE),
                            &hash::DHash::new(path::Path::new("./test_images/sample_03_medium.\
                                                               jpg"),
-                                             &hash::Precision::Medium),
+                                             &hash::Precision::Medium, &super::LIB_CACHE),
                            &hash::DHash::new(path::Path::new("./test_images/sample_03_small.jpg"),
-                                             &hash::Precision::Medium),
+                                             &hash::Precision::Medium, &super::LIB_CACHE),
                            225528496439353286,
                            225528496439353286,
                            226654396346195908,
@@ -332,12 +335,12 @@ mod tests {
 
         // Sample_04 tests
         test_imageset_hash(&hash::DHash::new(path::Path::new("./test_images/sample_04_large.jpg"),
-                                             &hash::Precision::Medium),
+                                             &hash::Precision::Medium, &super::LIB_CACHE),
                            &hash::DHash::new(path::Path::new("./test_images/sample_04_medium.\
                                                               jpg"),
-                                             &hash::Precision::Medium),
+                                             &hash::Precision::Medium, &super::LIB_CACHE),
                            &hash::DHash::new(path::Path::new("./test_images/sample_04_small.jpg"),
-                                             &hash::Precision::Medium),
+                                             &hash::Precision::Medium, &super::LIB_CACHE),
                            14620651386429567209,
                            14620651386429567209,
                            14620651386429567209,
@@ -356,12 +359,12 @@ mod tests {
 
         // Sample_01 tests
         test_imageset_hash(&hash::PHash::new(path::Path::new("./test_images/sample_01_large.jpg"),
-                                             &hash::Precision::Medium),
+                                             &hash::Precision::Medium, &super::LIB_CACHE),
                            &hash::PHash::new(path::Path::new("./test_images/sample_01_medium.\
                                                               jpg"),
-                                             &hash::Precision::Medium),
+                                             &hash::Precision::Medium, &super::LIB_CACHE),
                            &hash::PHash::new(path::Path::new("./test_images/sample_01_small.jpg"),
-                                             &hash::Precision::Medium),
+                                             &hash::Precision::Medium, &super::LIB_CACHE),
                            72357778504597504,
                            72357778504597504,
                            72357778504597504,
@@ -371,12 +374,12 @@ mod tests {
 
         // Sample_02 tests
         test_imageset_hash(&hash::PHash::new(path::Path::new("./test_images/sample_02_large.jpg"),
-                                             &hash::Precision::Medium),
+                                             &hash::Precision::Medium, &super::LIB_CACHE),
                            &hash::PHash::new(path::Path::new("./test_images/sample_02_medium.\
                                                               jpg"),
-                                             &hash::Precision::Medium),
+                                             &hash::Precision::Medium, &super::LIB_CACHE),
                            &hash::PHash::new(path::Path::new("./test_images/sample_02_small.jpg"),
-                                             &hash::Precision::Medium),
+                                             &hash::Precision::Medium, &super::LIB_CACHE),
                            5332332327550844928,
                            5332332327550844928,
                            5332332327550844928,
@@ -385,12 +388,12 @@ mod tests {
                            0u64);
         // Sample_03 tests
         test_imageset_hash(&hash::PHash::new(path::Path::new("./test_images/sample_03_large.jpg"),
-                                             &hash::Precision::Medium),
+                                             &hash::Precision::Medium, &super::LIB_CACHE),
                            &hash::PHash::new(path::Path::new("./test_images/sample_03_medium.\
                                                               jpg"),
-                                             &hash::Precision::Medium),
+                                             &hash::Precision::Medium, &super::LIB_CACHE),
                            &hash::PHash::new(path::Path::new("./test_images/sample_03_small.jpg"),
-                                             &hash::Precision::Medium),
+                                             &hash::Precision::Medium, &super::LIB_CACHE),
                            6917529027641081856,
                            6917529027641081856,
                            6917529027641081856,
@@ -400,12 +403,12 @@ mod tests {
 
         // Sample_04 tests
         test_imageset_hash(&hash::PHash::new(path::Path::new("./test_images/sample_04_large.jpg"),
-                                             &hash::Precision::Medium),
+                                             &hash::Precision::Medium, &super::LIB_CACHE),
                            &hash::PHash::new(path::Path::new("./test_images/sample_04_medium.\
                                                               jpg"),
-                                             &hash::Precision::Medium),
+                                             &hash::Precision::Medium, &super::LIB_CACHE),
                            &hash::PHash::new(path::Path::new("./test_images/sample_04_small.jpg"),
-                                             &hash::Precision::Medium),
+                                             &hash::Precision::Medium, &super::LIB_CACHE),
                            10997931646002397184,
                            10997931646002397184,
                            11142046834078253056,
