@@ -19,7 +19,7 @@ use hash::PerceptualHash;
 use std::ffi::CStr;
 use cache::Cache;
 
-static LIB_CACHE: Cache<'static> = Cache { cache_dir: cache::CACHE_DIR };
+static LIB_CACHE: Cache<'static> = Cache { cache_dir: cache::CACHE_DIR, use_cache: true };
 
 /**
  * Prepare the library for work.

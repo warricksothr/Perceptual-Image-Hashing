@@ -48,10 +48,11 @@ impl PartialEq<CacheMetadata> for CacheMetadata {
 */
 pub struct Cache<'a> {
     pub cache_dir: &'a str,
+    pub use_cache: bool,
 }
 
 impl<'a> Default for Cache<'a> {
-    fn default() -> Cache<'a> { Cache {cache_dir: CACHE_DIR } }
+    fn default() -> Cache<'a> { Cache {cache_dir: CACHE_DIR, use_cache: true } }
 }
 
 impl<'a> Cache<'a> {
@@ -172,33 +173,35 @@ impl<'a> Cache<'a> {
                                 path: &Path,
                                 size: u32)
                                 -> Option<ImageBuffer<image::Luma<u8>, Vec<u8>>> {
-        let hash = self.get_file_hash(&path);
-        match hash {
-            Ok(sha1) => {
-                // Check if the file exists in the cache
-                let cache_path_str = format!("{}/image/{}x{}/{}.{}",
-                                             self.cache_dir,
-                                             size,
-                                             size,
-                                             sha1,
-                                             CACHED_IMAGE_EXT);
-                let cached_path = Path::new(&cache_path_str);
-                // Try to open, if it does, then we can read the image in
-                match File::open(&cached_path) {
-                    Ok(_) => {
-                        let image = image::open(&cached_path).unwrap();
-                        Some(image.to_luma())
+        if self.use_cache {
+            let hash = self.get_file_hash(&path);
+            match hash {
+                Ok(sha1) => {
+                    // Check if the file exists in the cache
+                    let cache_path_str = format!("{}/image/{}x{}/{}.{}",
+                                                 self.cache_dir,
+                                                 size,
+                                                 size,
+                                                 sha1,
+                                                 CACHED_IMAGE_EXT);
+                    let cached_path = Path::new(&cache_path_str);
+                    // Try to open, if it does, then we can read the image in
+                    match File::open(&cached_path) {
+                        Ok(_) => {
+                            let image = image::open(&cached_path).unwrap();
+                            Some(image.to_luma())
+                        }
+                        // Don't really care here, it just means an existing cached
+                        // file doesn't exist, or can't be read.
+                        Err(_) => None,
                     }
-                    // Don't really care here, it just means an existing cached
-                    // file doesn't exist, or can't be read.
-                    Err(_) => None,
+                }
+                Err(e) => {
+                    println!("Error: {}", e);
+                    None
                 }
             }
-            Err(e) => {
-                println!("Error: {}", e);
-                None
-            }
-        }
+        } else { None }
     }
 
     /**
@@ -263,48 +266,50 @@ impl<'a> Cache<'a> {
                                     path: &Path,
                                     size: u32)
                                     -> Option<Vec<Vec<f64>>> {
-        let hash = self.get_file_hash(&path);
-        match hash {
-            Ok(sha1) => {
-                // Check if the file exists in the cache
-                let cache_path_str = format!("{}/matrix/{}x{}/{}.{}", CACHE_DIR, size, size, sha1, CACHED_MATRIX_EXT);
-                let cached_path = Path::new(&cache_path_str);
-                // Try to open, if it does, then we can read the image in
-                match File::open(&cached_path) {
-                    Ok(file) => {
-                        let mut decoder = ZlibDecoder::new(&file);
-                        let mut matrix_data_str = String::new();
-                        match decoder.read_to_string(&mut matrix_data_str) {
-                            Ok(_) => {}
-                            Err(e) => {
-                                println!("Unable to decompress matrix: {}", e);
-                                return None;
-                            }
-                        };
-                        // convert the matrix
-                        let matrix: Vec<Vec<f64>> = matrix_data_str.trim()
-                                                                   .split("\n")
-                                                                   .map(|line| {
-                                                                       line.split(",")
-                                                                           .map(|f| {
-                                                                               f64::from_str(f).unwrap()
-                                                                           })
-                                                                           .collect()
-                                                                   })
-                                                                   .collect();
+        if self.use_cache {
+            let hash = self.get_file_hash(&path);
+            match hash {
+                Ok(sha1) => {
+                    // Check if the file exists in the cache
+                    let cache_path_str = format!("{}/matrix/{}x{}/{}.{}", CACHE_DIR, size, size, sha1, CACHED_MATRIX_EXT);
+                    let cached_path = Path::new(&cache_path_str);
+                    // Try to open, if it does, then we can read the image in
+                    match File::open(&cached_path) {
+                        Ok(file) => {
+                            let mut decoder = ZlibDecoder::new(&file);
+                            let mut matrix_data_str = String::new();
+                            match decoder.read_to_string(&mut matrix_data_str) {
+                                Ok(_) => {}
+                                Err(e) => {
+                                    println!("Unable to decompress matrix: {}", e);
+                                    return None;
+                                }
+                            };
+                            // convert the matrix
+                            let matrix: Vec<Vec<f64>> = matrix_data_str.trim()
+                                                                       .split("\n")
+                                                                       .map(|line| {
+                                                                           line.split(",")
+                                                                               .map(|f| {
+                                                                                   f64::from_str(f).unwrap()
+                                                                               })
+                                                                               .collect()
+                                                                       })
+                                                                       .collect();
 
-                        Some(matrix)
+                            Some(matrix)
+                        }
+                        // Don't really care here, it just means an existing cached
+                        // file doesn't exist, or can't be read.
+                        Err(_) => None,
                     }
-                    // Don't really care here, it just means an existing cached
-                    // file doesn't exist, or can't be read.
-                    Err(_) => None,
+                }
+                Err(e) => {
+                    println!("Error: {}", e);
+                    None
                 }
             }
-            Err(e) => {
-                println!("Error: {}", e);
-                None
-            }
-        }
+        } else { None }
     }
 }
 
