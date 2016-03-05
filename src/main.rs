@@ -10,29 +10,28 @@ extern crate docopt;
 use std::path::Path;
 use docopt::Docopt;
 
+// Getting the version information from cargo during compile time
+const VERSION: &'static str = env!("CARGO_PKG_VERSION");
+
 // The usage description
 const USAGE: &'static str = "
 Perceptual Image Hashing (pihash)
 
 Usage:
-    pihash [options] \
-                             <path>...
+    pihash [options] <path>...
     pihash (--help | --version)
 
 Options:
-    -h, --help      \
-                             Show this screen.
-    -V, --version       Print version.
-    -a, \
-                             --ahash     Include an ahash calculation.
-    -d, --dhash     \
-                             Include an dhash calculation.
-    -p, --phash     Include an phash \
-                             calculation.
+    -h, --help      Show this screen.
+    -V, --version   Print version.
+    -a, --ahash     Include an ahash calculation.
+    -d, --dhash     Include an dhash calculation.
+    -p, --phash     Include an phash calculation.
 ";
 
 #[derive(Debug, RustcDecodable)]
 struct Args {
+    flag_version: bool,
     flag_ahash: bool,
     flag_dhash: bool,
     flag_phash: bool,
@@ -43,10 +42,18 @@ fn main() {
     let args: Args = Docopt::new(USAGE)
                          .and_then(|d| d.decode())
                          .unwrap_or_else(|e| e.exit());
+    
+    // Print version information and exit
+    if args.flag_version {
+        println!("Perceptual Image Hashing: v{}", VERSION);
+        std::process::exit(0);
+    }
+
     // Init the hashing library
     pihash::init();
 
     // println!("{:?}", args);
+
     // All flags set or, no flags set
     if (args.flag_ahash && args.flag_dhash && args.flag_phash) ||
        (!args.flag_ahash && !args.flag_dhash && !args.flag_phash) {
@@ -54,15 +61,16 @@ fn main() {
             let image_path = Path::new(&path);
             let hashes = pihash::get_phashes(&image_path);
             let hash_result = format!(r#"
-            file: {}
-            ahash: {}
-            dhash: {}
-            phash: {}
-            "#,
-                                      hashes.orig_path,
-                                      hashes.ahash,
-                                      hashes.dhash,
-                                      hashes.phash);
+                file: {}
+                ahash: {}
+                dhash: {}
+                phash: {}
+                "#,
+                hashes.orig_path,
+                hashes.ahash,
+                hashes.dhash,
+                hashes.phash
+            );
             println!("{}", hash_result);
         }
         // Otherwise process only specific hashes
