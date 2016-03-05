@@ -1,6 +1,6 @@
 [package]
 name = "pihash"
-version = "0.2.4"
+version = "0.2.5"
 authors = ["Drew Short <warrick@sothr.com>"]
 description = "A simple library for generating perceptual hashes for images and comparing images based on their perceptual hashes."
 repository = "https://github.com/warricksothr/Perceptual-Image-Hashing/"

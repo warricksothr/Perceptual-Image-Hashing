@@ -3,10 +3,16 @@
 // Licensed under the MIT license<LICENSE-MIT or http://opensource.org/licenses/MIT>.
 // This file may not be copied, modified, or distributed except according to those terms.
 
+extern crate libc;
+extern crate rustc_serialize;
+extern crate image;
+extern crate dft;
+extern crate complex;
+extern crate sha1;
+extern crate flate2;
+
 mod hash;
 mod cache;
-
-extern crate libc;
 
 use std::path::Path;
 use hash::PerceptualHash;

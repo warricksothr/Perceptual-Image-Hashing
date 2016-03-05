@@ -3,15 +3,12 @@
 // Licensed under the MIT license<LICENSE-MIT or http://opensource.org/licenses/MIT>.
 // This file may not be copied, modified, or distributed except according to those terms.
 
-// Pull in the image processing crate
-extern crate image;
-extern crate dft;
-extern crate complex;
-
 use std::path::Path;
 use std::f64;
-use self::image::{GenericImage, Pixel, FilterType};
-use self::dft::Transform;
+use super::image;
+use super::image::{GenericImage, Pixel, FilterType};
+use super::dft;
+use super::dft::Transform;
 use cache::Cache;
 
 // Used to get ranges for the precision of rounding floats

@@ -3,27 +3,45 @@
 // Licensed under the MIT license<LICENSE-MIT or http://opensource.org/licenses/MIT>.
 // This file may not be copied, modified, or distributed except according to those terms.
 
-extern crate image;
-extern crate sha1;
-extern crate flate2;
-
-use self::image::ImageBuffer;
-use self::sha1::Sha1;
-use self::flate2::Compression;
-use self::flate2::write::ZlibEncoder;
-use self::flate2::read::ZlibDecoder;
+use super::image;
+use super::image::ImageBuffer;
+use super::sha1::Sha1;
+use super::flate2::Compression;
+use super::flate2::write::ZlibEncoder;
+use super::flate2::read::ZlibDecoder;
 use std::str::FromStr;
 use std::path::Path;
 use std::fs::{File, create_dir_all, remove_dir_all};
 use std::io::{Read, Error, Write};
 use std::option::Option;
 use std::result::Result;
+use super::rustc_serialize::json;
 
 pub const CACHE_DIR: &'static str = "./.hash_cache";
 const CACHED_IMAGE_EXT: &'static str = "png";
 const CACHED_MATRIX_EXT: &'static str = "dft";
 // Caching version information
 const CACHE_VERSION: u32 = 1;
+const CACHE_METADATA_FILE: &'static str = "cache.meta";
+
+#[derive(RustcDecodable, RustcEncodable)]
+struct CacheMetadata {
+    cache_version: u32,
+}
+
+impl Default for CacheMetadata {
+    fn default() -> CacheMetadata { CacheMetadata { cache_version: CACHE_VERSION } }
+}
+
+impl PartialEq<CacheMetadata> for CacheMetadata {
+    fn eq(&self, other: &CacheMetadata) -> bool {
+        self.cache_version == other.cache_version
+    }
+
+    fn ne(&self, other: &CacheMetadata) -> bool {
+        !self.eq(&other)
+    }
+}
 
 /**
 * Structure to hold implementation of the cache
@@ -41,7 +59,49 @@ impl<'a> Cache<'a> {
      * Create the required directories for the cache
      */
     pub fn init(&self) -> Result<(), Error> {
-        create_dir_all(self.cache_dir)
+        match create_dir_all(self.cache_dir) {
+            Ok(_) => {
+                let metadata_path_str = format!("{}/{}", self.cache_dir, CACHE_METADATA_FILE);
+                let metadata_path = Path::new(&metadata_path_str);
+                let current_metadata: CacheMetadata = Default::default();
+                match File::open(&metadata_path) {
+                    Ok(mut file) => {
+                        // Metadata file exists, compare them
+                        let mut loaded_metadata_string = String::new();
+                        let _ = file.read_to_string(&mut loaded_metadata_string);
+                        let loaded_metadata: CacheMetadata = match json::decode(&loaded_metadata_string) {
+                            Ok(data) => data,
+                            Err(_) => CacheMetadata { cache_version: 0 },
+                        };
+
+                        // If they match, continue
+                        if current_metadata != loaded_metadata {
+                            // If they don't wipe the cache to start new
+                            match remove_dir_all(self.cache_dir) {
+                                Ok(_) => { 
+                                    match create_dir_all(self.cache_dir) {
+                                        Ok(_) => (),
+                                        Err(e) => println!("Error: {}", e),
+                                    }
+                                },
+                                Err(e) => println!("Error: {}", e),
+                            };
+                        };
+                    }
+                    // Metadata file doesn't exist, do nothing assume all is well, create new metadata file
+                    Err(_) => {},
+                };
+                let encoded_cache_metadata = json::encode(&current_metadata).unwrap();
+                match File::create(&metadata_path) {
+                    Ok(mut file) => {
+                        let _ = file.write(&encoded_cache_metadata.as_bytes());
+                        Ok(())
+                    },
+                    Err(e) => Err(e)
+                }
+            },
+            Err(e) => Err(e),
+        }
     }
 
     /**
