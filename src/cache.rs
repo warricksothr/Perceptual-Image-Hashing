@@ -34,7 +34,9 @@ struct CacheMetadata {
 }
 
 impl Default for CacheMetadata {
-    fn default() -> CacheMetadata { CacheMetadata { cache_version: CACHE_VERSION } }
+    fn default() -> CacheMetadata {
+        CacheMetadata { cache_version: CACHE_VERSION }
+    }
 }
 
 impl PartialEq<CacheMetadata> for CacheMetadata {
@@ -56,7 +58,12 @@ pub struct Cache<'a> {
 }
 
 impl<'a> Default for Cache<'a> {
-    fn default() -> Cache<'a> { Cache {cache_dir: CACHE_DIR, use_cache: true } }
+    fn default() -> Cache<'a> {
+        Cache {
+            cache_dir: CACHE_DIR,
+            use_cache: true,
+        }
+    }
 }
 
 impl<'a> Cache<'a> {
@@ -75,40 +82,42 @@ impl<'a> Cache<'a> {
                         let mut loaded_metadata_string = String::new();
                         match file.read_to_string(&mut loaded_metadata_string) {
                             Ok(_) => {
-                                let loaded_metadata: CacheMetadata = match json::decode(&loaded_metadata_string) {
-                                    Ok(data) => data,
-                                    Err(_) => CacheMetadata { cache_version: 0 },
-                                };
+                                let loaded_metadata: CacheMetadata =
+                                    match json::decode(&loaded_metadata_string) {
+                                        Ok(data) => data,
+                                        Err(_) => CacheMetadata { cache_version: 0 },
+                                    };
 
                                 // If they match, continue
                                 if current_metadata != loaded_metadata {
                                     // If they don't wipe the cache to start new
                                     match remove_dir_all(self.cache_dir) {
-                                        Ok(_) => { 
+                                        Ok(_) => {
                                             match create_dir_all(self.cache_dir) {
                                                 Ok(_) => (),
                                                 Err(e) => println!("Error: {}", e),
                                             }
-                                        },
+                                        }
                                         Err(e) => println!("Error: {}", e),
                                     };
                                 };
-                            },
+                            }
                             Err(e) => println!("Error: {}", e),
                         };
-                    },
-                    // Metadata file doesn't exist, do nothing assume all is well, create new metadata file
-                    Err(_) => {},
+                    }
+                    // Metadata file doesn't exist, do nothing assume all is well,
+                    // create new metadata file
+                    Err(_) => {}
                 };
                 let encoded_cache_metadata = json::encode(&current_metadata).unwrap();
                 match File::create(&metadata_path) {
                     Ok(mut file) => {
                         let _ = file.write(&encoded_cache_metadata.as_bytes());
                         Ok(())
-                    },
-                    Err(e) => Err(e)
+                    }
+                    Err(e) => Err(e),
                 }
-            },
+            }
             Err(e) => Err(e),
         }
     }
@@ -136,11 +145,11 @@ impl<'a> Cache<'a> {
     /**
      * Put an image buffer in the cache
      */
-    pub fn put_image_in_cache(&self, 
-                                path: &Path,
-                                size: u32,
-                                image: &ImageBuffer<image::Luma<u8>, Vec<u8>>)
-                                -> Result<bool, Error> {
+    pub fn put_image_in_cache(&self,
+                              path: &Path,
+                              size: u32,
+                              image: &ImageBuffer<image::Luma<u8>, Vec<u8>>)
+                              -> Result<bool, Error> {
         let hash = self.get_file_hash(&path);
         match hash {
             Ok(sha1) => {
@@ -162,7 +171,7 @@ impl<'a> Cache<'a> {
                                 return Err(e);
                             }
                         }
-                    },
+                    }
                     Err(e) => println!("Error: {}", e),
                 }
             }
@@ -209,21 +218,28 @@ impl<'a> Cache<'a> {
                     None
                 }
             }
-        } else { None }
+        } else {
+            None
+        }
     }
 
     /**
      * Expects a slice of slices that represents lines in the file
      */
     pub fn put_matrix_in_cache(&self,
-                                path: &Path,
-                                size: u32,
-                                file_contents: &Vec<Vec<f64>>)
-                                -> Result<bool, Error> {
+                               path: &Path,
+                               size: u32,
+                               file_contents: &Vec<Vec<f64>>)
+                               -> Result<bool, Error> {
         let hash = self.get_file_hash(&path);
         match hash {
             Ok(sha1) => {
-                let cache_path_str = format!("{}/matrix/{}x{}/{}.{}", self.cache_dir, size, size, sha1, CACHED_MATRIX_EXT);
+                let cache_path_str = format!("{}/matrix/{}x{}/{}.{}",
+                                             self.cache_dir,
+                                             size,
+                                             size,
+                                             sha1,
+                                             CACHED_MATRIX_EXT);
                 let cache_dir_str = format!("{}/matrix/{}x{}", self.cache_dir, size, size);
                 match create_dir_all(cache_dir_str) {
                     Ok(_) => {
@@ -231,10 +247,14 @@ impl<'a> Cache<'a> {
                         // Save the file into the cache
                         match File::create(&cached_path) {
                             Ok(mut file) => {
-                                let mut compressor = ZlibEncoder::new(Vec::new(), Compression::Default);
+                                let mut compressor = ZlibEncoder::new(Vec::new(),
+                                                                      Compression::Default);
                                 for row in file_contents {
                                     let mut row_str = row.iter().fold(String::new(),
-                                                                      |acc, &item| acc + &format!("{},", item));
+                                                                      |acc, &item| {
+                                                                          acc +
+                                                                          &format!("{},", item)
+                                                                      });
                                     // remove the last comma
                                     let desire_len = row_str.len() - 1;
                                     row_str.truncate(desire_len);
@@ -255,7 +275,7 @@ impl<'a> Cache<'a> {
                                 return Err(e);
                             }
                         }
-                    },
+                    }
                     Err(e) => println!("Error: {}", e),
                 }
             }
@@ -270,16 +290,18 @@ impl<'a> Cache<'a> {
     /**
      * Get a matrix out of the cache
      */
-    pub fn get_matrix_from_cache(&self,
-                                    path: &Path,
-                                    size: u32)
-                                    -> Option<Vec<Vec<f64>>> {
+    pub fn get_matrix_from_cache(&self, path: &Path, size: u32) -> Option<Vec<Vec<f64>>> {
         if self.use_cache {
             let hash = self.get_file_hash(&path);
             match hash {
                 Ok(sha1) => {
                     // Check if the file exists in the cache
-                    let cache_path_str = format!("{}/matrix/{}x{}/{}.{}", CACHE_DIR, size, size, sha1, CACHED_MATRIX_EXT);
+                    let cache_path_str = format!("{}/matrix/{}x{}/{}.{}",
+                                                 CACHE_DIR,
+                                                 size,
+                                                 size,
+                                                 sha1,
+                                                 CACHED_MATRIX_EXT);
                     let cached_path = Path::new(&cache_path_str);
                     // Try to open, if it does, then we can read the image in
                     match File::open(&cached_path) {
@@ -299,7 +321,8 @@ impl<'a> Cache<'a> {
                                                                        .map(|line| {
                                                                            line.split(",")
                                                                                .map(|f| {
-                                                                                   f64::from_str(f).unwrap()
+                                                                                   f64::from_str(f)
+                                                                                       .unwrap()
                                                                                })
                                                                                .collect()
                                                                        })
@@ -317,7 +340,9 @@ impl<'a> Cache<'a> {
                     None
                 }
             }
-        } else { None }
+        } else {
+            None
+        }
     }
 }
 

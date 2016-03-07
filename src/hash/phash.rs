@@ -17,7 +17,9 @@ pub struct PHash<'a> {
 
 impl<'a> PHash<'a> {
     pub fn new(path: &'a Path, precision: &Precision, cache: &'a Cache) -> Self {
-        PHash { prepared_image: Box::new(prepare_image(&path, &HashType::PHash, &precision, &cache)) }
+        PHash {
+            prepared_image: Box::new(prepare_image(&path, &HashType::PHash, &precision, &cache)),
+        }
     }
 }
 
@@ -39,8 +41,9 @@ impl<'a> PerceptualHash for PHash<'a> {
         // Pretty fast already, so caching doesn't make a huge difference
         // Atleast compared to opening and processing the images
         let mut data_matrix: Vec<Vec<f64>> = Vec::new();
-        match self.prepared_image.cache.get_matrix_from_cache(&Path::new(self.prepared_image.orig_path),
-                                           width as u32) {
+        match self.prepared_image
+                  .cache
+                  .get_matrix_from_cache(&Path::new(self.prepared_image.orig_path), width as u32) {
             Some(matrix) => data_matrix = matrix,
             None => {
                 // Preparing the results
@@ -60,9 +63,11 @@ impl<'a> PerceptualHash for PHash<'a> {
                 // Perform the 2D DFT operation on our matrix
                 calculate_2d_dft(&mut data_matrix);
                 // Store this DFT in the cache
-                match self.prepared_image.cache.put_matrix_in_cache(&Path::new(self.prepared_image.orig_path),
-                                                 width as u32,
-                                                 &data_matrix) {
+                match self.prepared_image
+                          .cache
+                          .put_matrix_in_cache(&Path::new(self.prepared_image.orig_path),
+                                               width as u32,
+                                               &data_matrix) {
                     Ok(_) => {}
                     Err(e) => println!("Unable to store matrix in cache. {}", e),
                 };

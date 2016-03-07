@@ -128,7 +128,7 @@ pub fn prepare_image<'a>(path: &'a Path,
             PreparedImage {
                 orig_path: &*image_path,
                 image: image,
-                cache: &cache
+                cache: &cache,
             }
         }
         None => {
@@ -152,18 +152,25 @@ pub fn prepare_image<'a>(path: &'a Path,
 /**
  * Get a specific HashType hash
  */
-pub fn get_perceptual_hash<'a>(path: &'a Path, precision: &Precision, hash_type: &HashType, cache: &Cache) -> u64 {
+pub fn get_perceptual_hash<'a>(path: &'a Path,
+                               precision: &Precision,
+                               hash_type: &HashType,
+                               cache: &Cache)
+                               -> u64 {
     match *hash_type {
         HashType::AHash => ahash::AHash::new(&path, &precision, &cache).get_hash(),
         HashType::DHash => dhash::DHash::new(&path, &precision, &cache).get_hash(),
-        HashType::PHash => phash::PHash::new(&path, &precision, &cache).get_hash()
+        HashType::PHash => phash::PHash::new(&path, &precision, &cache).get_hash(),
     }
 }
 
 /**
  * Get all perceptual hashes for an image
  */
-pub fn get_perceptual_hashes<'a>(path: &'a Path, precision: &Precision, cache: &Cache) -> PerceptualHashes<'a> {
+pub fn get_perceptual_hashes<'a>(path: &'a Path,
+                                 precision: &Precision,
+                                 cache: &Cache)
+                                 -> PerceptualHashes<'a> {
     let image_path = path.to_str().unwrap();
     let ahash = ahash::AHash::new(&path, &precision, &cache).get_hash();
     let dhash = dhash::DHash::new(&path, &precision, &cache).get_hash();

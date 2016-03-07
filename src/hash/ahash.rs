@@ -15,7 +15,9 @@ pub struct AHash<'a> {
 
 impl<'a> AHash<'a> {
     pub fn new(path: &'a Path, precision: &Precision, cache: &'a Cache) -> Self {
-        AHash { prepared_image: Box::new(prepare_image(&path, &HashType::AHash, &precision, &cache)) }
+        AHash {
+            prepared_image: Box::new(prepare_image(&path, &HashType::AHash, &precision, &cache)),
+        }
     }
 }
 

@@ -42,7 +42,7 @@ fn main() {
     let args: Args = Docopt::new(USAGE)
                          .and_then(|d| d.decode())
                          .unwrap_or_else(|e| e.exit());
-    
+
     // Print version information and exit
     if args.flag_version {
         println!("Perceptual Image Hashing: v{}", VERSION);
@@ -66,11 +66,10 @@ fn main() {
                 dhash: {}
                 phash: {}
                 "#,
-                hashes.orig_path,
-                hashes.ahash,
-                hashes.dhash,
-                hashes.phash
-            );
+                                      hashes.orig_path,
+                                      hashes.ahash,
+                                      hashes.dhash,
+                                      hashes.phash);
             println!("{}", hash_result);
         }
         // Otherwise process only specific hashes
