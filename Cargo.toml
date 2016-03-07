@@ -6,7 +6,7 @@ description = "A simple library for generating perceptual hashes for images and 
 repository = "https://github.com/warricksothr/Perceptual-Image-Hashing/"
 readme = "README.md"
 keywords = ["phash", "perceptual", "image", "comparison"]
-license-file = "LICENSE"
+license = "MIT"
 exclude = ["test_images/*"]
 
 [lib]
