@@ -6,7 +6,7 @@
 extern crate libc;
 extern crate rustc_serialize;
 
-mod hash;
+pub mod hash;
 mod cache;
 
 use std::path::Path;

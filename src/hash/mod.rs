@@ -33,6 +33,8 @@ const FLOAT_PRECISION_MIN_4: f64 = f64::MIN / 10000_f64;
 // Can round to 5 significant factors of precision
 const FLOAT_PRECISION_MAX_5: f64 = f64::MAX / 100000_f64;
 const FLOAT_PRECISION_MIN_5: f64 = f64::MIN / 100000_f64;
+// Hamming Distance Similarity Limit //
+const HAMMING_DISTANCE_SIMILARITY_LIMIT: u64 = 5u64;
 
 // Structs/Enums //
 
@@ -53,6 +55,19 @@ pub struct PerceptualHashes<'a> {
     pub ahash: u64,
     pub dhash: u64,
     pub phash: u64,
+}
+
+impl<'a> PerceptualHashes<'a> {
+    pub fn similar(&self, other: &'a PerceptualHashes<'a>) -> bool {
+        if self.orig_path != other.orig_path &&
+            calculate_hamming_distance(self.ahash, other.ahash) <= HAMMING_DISTANCE_SIMILARITY_LIMIT &&
+            calculate_hamming_distance(self.dhash, other.dhash) <= HAMMING_DISTANCE_SIMILARITY_LIMIT &&
+            calculate_hamming_distance(self.phash, other.phash) <= HAMMING_DISTANCE_SIMILARITY_LIMIT {
+            true 
+        } else {
+            false
+        }
+    }
 }
 
 /**

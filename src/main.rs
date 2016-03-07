@@ -16,9 +16,12 @@ const VERSION: &'static str = env!("CARGO_PKG_VERSION");
 // The usage description
 const USAGE: &'static str = "
 Perceptual Image Hashing (pihash)
+Calculate the perceptual hash values for an input or compare the 
+input file to a set of other images and return a list of the similar
+images.
 
 Usage:
-    pihash [options] <path>...
+    pihash [options] <path> [<comparison>...]
     pihash (--help | --version)
 
 Options:
@@ -35,7 +38,8 @@ struct Args {
     flag_ahash: bool,
     flag_dhash: bool,
     flag_phash: bool,
-    arg_path: Vec<String>,
+    arg_path: String,
+    arg_comparison: Vec<String>,
 }
 
 fn main() {
@@ -53,43 +57,72 @@ fn main() {
     pihash::init();
 
     // println!("{:?}", args);
+    if args.arg_comparison.len() > 0 {
+        let base_image_path = Path::new(&args.arg_path);
+        let base_hash = get_requested_perceptual_hashes(&base_image_path, &args);
 
-    // All flags set or, no flags set
-    if (args.flag_ahash && args.flag_dhash && args.flag_phash) ||
-       (!args.flag_ahash && !args.flag_dhash && !args.flag_phash) {
-        for path in args.arg_path {
-            let image_path = Path::new(&path);
-            let hashes = pihash::get_phashes(&image_path);
-            let hash_result = format!(r#"
-                file: {}
-                ahash: {}
-                dhash: {}
-                phash: {}
-                "#,
-                                      hashes.orig_path,
-                                      hashes.ahash,
-                                      hashes.dhash,
-                                      hashes.phash);
-            println!("{}", hash_result);
+        let mut comparison_hashes: Vec<pihash::hash::PerceptualHashes> = Vec::new();
+        for index in 0..args.arg_comparison.len() {
+            comparison_hashes.push(get_requested_perceptual_hashes(&Path::new(&args.arg_comparison[index]), &args));
         }
-        // Otherwise process only specific hashes
+
+        let mut similar_images: Vec<&str> = Vec::new();
+        for comparison_hash in comparison_hashes {
+            if base_hash.similar(&comparison_hash) {
+                similar_images.push(&comparison_hash.orig_path);
+            }
+        }
+
+        println!("Base Image:");
+        println!("{}", base_image_path.to_str().unwrap());
+        println!("Similar Images:");
+        for similar_image in similar_images {
+            println!("{}", similar_image);
+        }
+
     } else {
-        for path in args.arg_path {
-            println!("file: {}", path);
-            let image_path = Path::new(&path);
-            if args.flag_ahash {
-                let ahash = pihash::get_ahash(&image_path);
-                println!("ahash: {}", ahash);
-            }
-            if args.flag_dhash {
-                let dhash = pihash::get_dhash(&image_path);
-                println!("dhash: {}", dhash);
-            }
-            if args.flag_phash {
-                let phash = pihash::get_phash(&image_path);
-                println!("phash: {}", phash);
-            }
-            println!("");
-        }
+        let image_path = Path::new(&args.arg_path);
+        let hashes = get_requested_perceptual_hashes(&image_path, &args);
+        let hash_result = format!(r#"
+            file: {}
+            ahash: {}
+            dhash: {}
+            phash: {}
+            "#,
+                                  hashes.orig_path,
+                                  hashes.ahash,
+                                  hashes.dhash,
+                                  hashes.phash);
+            println!("{}", hash_result);
     }
+}
+
+fn flags_get_all_perceptual_hashes(args: &Args) -> bool {
+    (args.flag_ahash && args.flag_dhash && args.flag_phash) ||
+       (!args.flag_ahash && !args.flag_dhash && !args.flag_phash)
+}
+
+fn get_requested_perceptual_hashes<'a>(image_path: &'a Path, args: &Args) -> pihash::hash::PerceptualHashes<'a> {
+        let ahash = if args.flag_ahash || flags_get_all_perceptual_hashes(&args) {
+             pihash::get_ahash(&image_path)
+        } else {
+            0u64
+        };
+
+        let dhash = if args.flag_dhash || flags_get_all_perceptual_hashes(&args) {
+             pihash::get_ahash(&image_path)
+        } else {
+            0u64
+        };
+
+        let phash = if args.flag_phash || flags_get_all_perceptual_hashes(&args) {
+             pihash::get_ahash(&image_path)
+        } else {
+            0u64
+        };
+
+        pihash::hash::PerceptualHashes {orig_path: image_path.to_str().unwrap(), 
+                                        ahash: ahash, 
+                                        dhash: dhash, 
+                                        phash: phash}
 }
