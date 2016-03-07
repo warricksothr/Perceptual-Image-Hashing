@@ -1,4 +1,4 @@
-// Copyright 2015 Drew Short <drew@sothr.com>.
+// Copyright 2016 Drew Short <drew@sothr.com>.
 //
 // Licensed under the MIT license<LICENSE-MIT or http://opensource.org/licenses/MIT>.
 // This file may not be copied, modified, or distributed except according to those terms.
@@ -72,7 +72,7 @@ pub fn get_hamming_distance(hash1: u64, hash2: u64) -> u64 {
     hash::calculate_hamming_distance(hash1, hash2)
 }
 
-// External proxies for the get_*hash methods
+// External proxies for the get_*hash methods //
 
 #[no_mangle]
 pub extern "C" fn ext_get_ahash(path_char: *const libc::c_char) -> libc::uint64_t {
