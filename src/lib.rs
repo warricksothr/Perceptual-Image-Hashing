@@ -131,7 +131,6 @@ static LIB_CACHE: Cache<'static> = Cache { cache_dir: cache::CACHE_DIR, use_cach
  #[cfg(test)]
  mod tests {
 
- 	use super::*;
  	use std::fs;
  	use std::path::Path;
  	use hash;
