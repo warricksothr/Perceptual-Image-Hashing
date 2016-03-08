@@ -16,9 +16,9 @@ pub struct PHash<'a> {
 }
 
 impl<'a> PHash<'a> {
-    pub fn new(path: &'a Path, precision: &Precision, cache: &'a Cache) -> Self {
+    pub fn new(path: &'a Path, precision: &Precision, cache: &Option<Box<Cache>>) -> Self {
         PHash {
-            prepared_image: Box::new(prepare_image(&path, &HashType::PHash, &precision, &cache)),
+            prepared_image: Box::new(prepare_image(&path, &HashType::PHash, &precision, cache)),
         }
     }
 }
@@ -31,7 +31,7 @@ impl<'a> PerceptualHash for PHash<'a> {
      *
      * Returns a u64 representing the value of the hash
      */
-    fn get_hash(&self) -> u64 {
+    fn get_hash(&self, cache: &Option<Box<Cache>>) -> u64 {
         // Get the image data into a vector to perform the DFT on.
         let width = self.prepared_image.image.width() as usize;
         let height = self.prepared_image.image.height() as usize;
@@ -40,39 +40,23 @@ impl<'a> PerceptualHash for PHash<'a> {
         // Either from the cache or calculate it
         // Pretty fast already, so caching doesn't make a huge difference
         // Atleast compared to opening and processing the images
-        let mut data_matrix: Vec<Vec<f64>> = Vec::new();
-        match self.prepared_image
-                  .cache
-                  .get_matrix_from_cache(&Path::new(self.prepared_image.orig_path), width as u32) {
-            Some(matrix) => data_matrix = matrix,
-            None => {
-                // Preparing the results
-                for x in 0..width {
-                    data_matrix.push(Vec::new());
-                    for y in 0..height {
-                        let pos_x = x as u32;
-                        let pos_y = y as u32;
-                        data_matrix[x]
-                            .push(self.prepared_image
-                                      .image
-                                      .get_pixel(pos_x, pos_y)
-                                      .channels()[0] as f64);
+        let data_matrix: Vec<Vec<f64>> = match *cache {
+            Some(ref c) => {
+                match c.get_matrix_from_cache(&Path::new(self.prepared_image.orig_path), width as u32) {
+                    Some(matrix) => matrix,
+                    None => {
+                        let matrix = create_data_matrix(width, height, &self.prepared_image);
+                        // Store this DFT in the cache
+                        match c.put_matrix_in_cache(&Path::new(self.prepared_image.orig_path), width as u32, &matrix) {
+                            Ok(_) => {}
+                            Err(e) => println!("Unable to store matrix in cache. {}", e),
+                        };
+                        matrix
                     }
                 }
-
-                // Perform the 2D DFT operation on our matrix
-                calculate_2d_dft(&mut data_matrix);
-                // Store this DFT in the cache
-                match self.prepared_image
-                          .cache
-                          .put_matrix_in_cache(&Path::new(self.prepared_image.orig_path),
-                                               width as u32,
-                                               &data_matrix) {
-                    Ok(_) => {}
-                    Err(e) => println!("Unable to store matrix in cache. {}", e),
-                };
-            }
-        }
+            },
+            None => create_data_matrix(width, height, &self.prepared_image)
+        };
 
         // Only need the top left quadrant
         let target_width = (width / 4) as usize;
@@ -107,6 +91,27 @@ impl<'a> PerceptualHash for PHash<'a> {
         // println!("Hash for {} is {}", prepared_image.orig_path, hash);
         hash
     }
+}
+
+fn create_data_matrix(width: usize, height: usize, prepared_image: &PreparedImage) -> Vec<Vec<f64>> {
+    let mut data_matrix: Vec<Vec<f64>> = Vec::new();
+    // Preparing the results
+    for x in 0..width {
+        data_matrix.push(Vec::new());
+        for y in 0..height {
+            let pos_x = x as u32;
+            let pos_y = y as u32;
+            data_matrix[x]
+                .push(prepared_image
+                          .image
+                          .get_pixel(pos_x, pos_y)
+                          .channels()[0] as f64);
+        }
+    }
+
+    // Perform the 2D DFT operation on our matrix
+    calculate_2d_dft(&mut data_matrix);
+    data_matrix
 }
 
 // Use a 1D DFT to cacluate the 2D DFT.

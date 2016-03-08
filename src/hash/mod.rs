@@ -44,7 +44,6 @@ const HAMMING_DISTANCE_SIMILARITY_LIMIT: u64 = 5u64;
 pub struct PreparedImage<'a> {
     orig_path: &'a str,
     image: image::ImageBuffer<image::Luma<u8>, Vec<u8>>,
-    cache: &'a Cache<'a>,
 }
 
 /**
@@ -108,7 +107,7 @@ pub enum HashType {
 // Traits //
 
 pub trait PerceptualHash {
-    fn get_hash(&self) -> u64;
+    fn get_hash(&self, cache: &Option<Box<Cache>>) -> u64;
 }
 
 // Functions //
@@ -130,7 +129,7 @@ pub trait PerceptualHash {
 pub fn prepare_image<'a>(path: &'a Path,
                          hash_type: &HashType,
                          precision: &Precision,
-                         cache: &'a Cache<'a>)
+                         cache: &Option<Box<Cache>>)
                          -> PreparedImage<'a> {
     let image_path = path.to_str().unwrap();
     let size: u32 = match *hash_type {
@@ -138,29 +137,43 @@ pub fn prepare_image<'a>(path: &'a Path,
         _ => precision.get_size(),
     };
     // Check if we have the already converted image in a cache and use that if possible.
-    match cache.get_image_from_cache(&path, size) {
-        Some(image) => {
-            PreparedImage {
-                orig_path: &*image_path,
-                image: image,
-                cache: &cache,
+    match *cache {
+        Some(ref c) => {
+            match c.get_image_from_cache(&path, size) {
+                Some(image) => {
+                    PreparedImage {
+                        orig_path: &*image_path,
+                        image: image,
+                    }
+                }
+                None => { 
+                    let image = process_image(&path, size);
+                    // Oh, and save it in a cache
+                    match c.put_image_in_cache(&path, size, &image.image) {
+                        Ok(_) => {}
+                        Err(e) => println!("Unable to store image in cache. {}", e),
+                    };
+                    image
+                }
             }
-        }
-        None => {
-            // Otherwise let's do that work now and store it.
-            let image = image::open(path).unwrap();
-            let small_image = image.resize_exact(size, size, FilterType::Lanczos3);
-            let grey_image = small_image.to_luma();
-            match cache.put_image_in_cache(&path, size, &grey_image) {
-                Ok(_) => {}
-                Err(e) => println!("Unable to store image in cache. {}", e),
-            };
-            PreparedImage {
-                orig_path: &*image_path,
-                image: grey_image,
-                cache: &cache,
-            }
-        }
+        },
+        None => process_image(&path, size),
+    }
+}
+
+/**
+ * Turn the image into something we can work with
+ */
+fn process_image(path: &Path,
+                 size: u32) -> PreparedImage{
+    // Otherwise let's do that work now and store it.
+    let image_path = path.to_str().unwrap();
+    let image = image::open(path).unwrap();
+    let small_image = image.resize_exact(size, size, FilterType::Lanczos3);
+    let grey_image = small_image.to_luma();
+    PreparedImage {
+        orig_path: &*image_path,
+        image: grey_image,
     }
 }
 
@@ -170,12 +183,12 @@ pub fn prepare_image<'a>(path: &'a Path,
 pub fn get_perceptual_hash<'a>(path: &'a Path,
                                precision: &Precision,
                                hash_type: &HashType,
-                               cache: &Cache)
+                               cache: &Option<Box<Cache>>)
                                -> u64 {
     match *hash_type {
-        HashType::AHash => ahash::AHash::new(&path, &precision, &cache).get_hash(),
-        HashType::DHash => dhash::DHash::new(&path, &precision, &cache).get_hash(),
-        HashType::PHash => phash::PHash::new(&path, &precision, &cache).get_hash(),
+        HashType::AHash => ahash::AHash::new(&path, &precision, &cache).get_hash(&cache),
+        HashType::DHash => dhash::DHash::new(&path, &precision, &cache).get_hash(&cache),
+        HashType::PHash => phash::PHash::new(&path, &precision, &cache).get_hash(&cache),
     }
 }
 
@@ -184,12 +197,12 @@ pub fn get_perceptual_hash<'a>(path: &'a Path,
  */
 pub fn get_perceptual_hashes<'a>(path: &'a Path,
                                  precision: &Precision,
-                                 cache: &Cache)
+                                 cache: &Option<Box<Cache>>)
                                  -> PerceptualHashes<'a> {
     let image_path = path.to_str().unwrap();
-    let ahash = ahash::AHash::new(&path, &precision, &cache).get_hash();
-    let dhash = dhash::DHash::new(&path, &precision, &cache).get_hash();
-    let phash = phash::PHash::new(&path, &precision, &cache).get_hash();
+    let ahash = ahash::AHash::new(&path, &precision, &cache).get_hash(&cache);
+    let dhash = dhash::DHash::new(&path, &precision, &cache).get_hash(&cache);
+    let phash = phash::PHash::new(&path, &precision, &cache).get_hash(&cache);
     PerceptualHashes {
         orig_path: &*image_path,
         ahash: ahash,

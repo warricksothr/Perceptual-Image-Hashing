@@ -21,7 +21,7 @@ use std::option::Option;
 use std::result::Result;
 use super::rustc_serialize::json;
 
-pub const CACHE_DIR: &'static str = "./.hash_cache";
+pub const DEFAULT_CACHE_DIR: &'static str = "./.hash_cache";
 const CACHED_IMAGE_EXT: &'static str = "png";
 const CACHED_MATRIX_EXT: &'static str = "dft";
 // Caching version information
@@ -60,7 +60,7 @@ pub struct Cache<'a> {
 impl<'a> Default for Cache<'a> {
     fn default() -> Cache<'a> {
         Cache {
-            cache_dir: CACHE_DIR,
+            cache_dir: DEFAULT_CACHE_DIR,
             use_cache: true,
         }
     }
@@ -154,7 +154,7 @@ impl<'a> Cache<'a> {
         match hash {
             Ok(sha1) => {
                 let cache_path_str = format!("{}/image/{}x{}/{}.{}",
-                                             CACHE_DIR,
+                                             self.cache_dir,
                                              size,
                                              size,
                                              sha1,
@@ -297,7 +297,7 @@ impl<'a> Cache<'a> {
                 Ok(sha1) => {
                     // Check if the file exists in the cache
                     let cache_path_str = format!("{}/matrix/{}x{}/{}.{}",
-                                                 CACHE_DIR,
+                                                 self.cache_dir,
                                                  size,
                                                  size,
                                                  sha1,
