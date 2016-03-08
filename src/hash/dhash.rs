@@ -30,35 +30,39 @@ impl<'a> PerceptualHash for DHash<'a> {
      * Returns a u64 representing the value of the hash
      */
     fn get_hash(&self, _: &Option<Box<Cache>>) -> u64 {
-        // Stored for later
-        let first_pixel_val = self.prepared_image.image.pixels().nth(0).unwrap().channels()[0];
-        let last_pixel_val = self.prepared_image.image.pixels().last().unwrap().channels()[0];
+        match self.prepared_image.image {
+            Some(ref image) => {
+                let first_pixel_val = image.pixels().nth(0).unwrap().channels()[0];
+                let last_pixel_val = image.pixels().last().unwrap().channels()[0];
 
-        // Calculate the dhash
-        let mut previous_pixel_val = 0u64;
-        let mut hash = 0u64;
-        for (index, pixel) in self.prepared_image.image.pixels().enumerate() {
-            if index == 0 {
-                previous_pixel_val = pixel.channels()[0] as u64;
-                continue;
-            }
-            let channels = pixel.channels();
-            let pixel_val = channels[0] as u64;
-            if pixel_val >= previous_pixel_val {
-                hash |= 1;
-            } else {
-                hash |= 0;
-            }
-            hash <<= 1;
-            previous_pixel_val = channels[0] as u64;
+                // Calculate the dhash
+                let mut previous_pixel_val = 0u64;
+                let mut hash = 0u64;
+                for (index, pixel) in image.pixels().enumerate() {
+                    if index == 0 {
+                        previous_pixel_val = pixel.channels()[0] as u64;
+                        continue;
+                    }
+                    let channels = pixel.channels();
+                    let pixel_val = channels[0] as u64;
+                    if pixel_val >= previous_pixel_val {
+                        hash |= 1;
+                    } else {
+                        hash |= 0;
+                    }
+                    hash <<= 1;
+                    previous_pixel_val = channels[0] as u64;
+                }
+
+                if first_pixel_val >= last_pixel_val {
+                    hash |= 1;
+                } else {
+                    hash |= 0;
+                }
+
+                hash
+            },
+            None => 0u64
         }
-
-        if first_pixel_val >= last_pixel_val {
-            hash |= 1;
-        } else {
-            hash |= 0;
-        }
-
-        hash
     }
 }

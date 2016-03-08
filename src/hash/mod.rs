@@ -43,7 +43,7 @@ const HAMMING_DISTANCE_SIMILARITY_LIMIT: u64 = 5u64;
  */
 pub struct PreparedImage<'a> {
     orig_path: &'a str,
-    image: image::ImageBuffer<image::Luma<u8>, Vec<u8>>,
+    image: Option<image::ImageBuffer<image::Luma<u8>, Vec<u8>>>,
 }
 
 /**
@@ -143,37 +143,49 @@ pub fn prepare_image<'a>(path: &'a Path,
                 Some(image) => {
                     PreparedImage {
                         orig_path: &*image_path,
-                        image: image,
+                        image: Some(image),
                     }
                 }
                 None => { 
-                    let image = process_image(&path, size);
+                    let processed_image = process_image(&image_path, size);
                     // Oh, and save it in a cache
-                    match c.put_image_in_cache(&path, size, &image.image) {
-                        Ok(_) => {}
-                        Err(e) => println!("Unable to store image in cache. {}", e),
+                    match processed_image.image {
+                        Some(ref image) => {
+                            match c.put_image_in_cache(&path, size, &image) {
+                                Ok(_) => {}
+                                Err(e) => println!("Unable to store image in cache. {}", e),
+                            };
+                        },
+                        None => {}
                     };
-                    image
+                    processed_image
                 }
             }
         },
-        None => process_image(&path, size),
+        None => process_image(&image_path, size),
     }
 }
 
 /**
  * Turn the image into something we can work with
  */
-fn process_image(path: &Path,
-                 size: u32) -> PreparedImage{
+fn process_image<'a>(image_path: &'a str,
+                 size: u32) -> PreparedImage<'a> {
     // Otherwise let's do that work now and store it.
-    let image_path = path.to_str().unwrap();
-    let image = image::open(path).unwrap();
-    let small_image = image.resize_exact(size, size, FilterType::Lanczos3);
-    let grey_image = small_image.to_luma();
+    //println!("Path: {}", image_path);
+    let image = match image::open(Path::new(image_path)) {
+        Ok(image) => {
+            let small_image = image.resize_exact(size, size, FilterType::Lanczos3);
+            Some(small_image.to_luma())
+        },
+        Err(e) => { 
+            println!("Error Processing Image [{}]: {} ", image_path, e);
+            None
+        }
+    };
     PreparedImage {
         orig_path: &*image_path,
-        image: grey_image,
+        image: image,
     }
 }
 

@@ -30,34 +30,38 @@ impl<'a> PerceptualHash for AHash<'a> {
     * A u64 representing the value of the hash
     */
     fn get_hash(&self, _: &Option<Box<Cache>>) -> u64 {
-        let (width, height) = self.prepared_image.image.dimensions();
+        match self.prepared_image.image {
+            Some(ref image) => {
+                let (width, height) = image.dimensions();
 
-        // calculating the average pixel value
-        let mut total = 0u64;
-        for pixel in self.prepared_image.image.pixels() {
-            let channels = pixel.channels();
-            // println!("Pixel is: {}", channels[0]);
-            total += channels[0] as u64;
+                // calculating the average pixel value
+                let mut total = 0u64;
+                for pixel in image.pixels() {
+                    let channels = pixel.channels();
+                    // println!("Pixel is: {}", channels[0]);
+                    total += channels[0] as u64;
+                }
+                let mean = total / (width * height) as u64;
+                // println!("Mean for {} is {}", prepared_image.orig_path, mean);
+
+                // Calculating a hash based on the mean
+                let mut hash = 0u64;
+                for pixel in image.pixels() {
+                    let channels = pixel.channels();
+                    let pixel_sum = channels[0] as u64;
+                    if pixel_sum >= mean {
+                        hash |= 1;
+                        // println!("Pixel {} is >= {} therefore {:b}", pixel_sum, mean, hash);
+                    } else {
+                        hash |= 0;
+                        // println!("Pixel {} is < {} therefore {:b}", pixel_sum, mean, hash);
+                    }
+                    hash <<= 1;
+                }
+                // println!("Hash for {} is {}", prepared_image.orig_path, hash);
+                hash
+            },
+            None => 0u64
         }
-        let mean = total / (width * height) as u64;
-        // println!("Mean for {} is {}", prepared_image.orig_path, mean);
-
-        // Calculating a hash based on the mean
-        let mut hash = 0u64;
-        for pixel in self.prepared_image.image.pixels() {
-            let channels = pixel.channels();
-            let pixel_sum = channels[0] as u64;
-            if pixel_sum >= mean {
-                hash |= 1;
-                // println!("Pixel {} is >= {} therefore {:b}", pixel_sum, mean, hash);
-            } else {
-                hash |= 0;
-                // println!("Pixel {} is < {} therefore {:b}", pixel_sum, mean, hash);
-            }
-            hash <<= 1;
-        }
-        // println!("Hash for {} is {}", prepared_image.orig_path, hash);
-
-        hash
     }
 }

@@ -3,6 +3,9 @@
 // Licensed under the MIT license<LICENSE-MIT or http://opensource.org/licenses/MIT>.
 // This file may not be copied, modified, or distributed except according to those terms.
 
+// Enable nightly features for extra testing behind the bench feature
+#![cfg_attr(feature = "bench", feature(test))]
+
 extern crate libc;
 extern crate rustc_serialize;
 #[cfg(feature = "bench")]

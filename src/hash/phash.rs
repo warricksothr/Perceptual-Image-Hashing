@@ -32,68 +32,73 @@ impl<'a> PerceptualHash for PHash<'a> {
      * Returns a u64 representing the value of the hash
      */
     fn get_hash(&self, cache: &Option<Box<Cache>>) -> u64 {
-        // Get the image data into a vector to perform the DFT on.
-        let width = self.prepared_image.image.width() as usize;
-        let height = self.prepared_image.image.height() as usize;
+        match self.prepared_image.image {
+            Some(ref image) => {
+                // Get the image data into a vector to perform the DFT on.
+                let width = image.width() as usize;
+                let height = image.height() as usize;
 
-        // Get 2d data to 2d FFT/DFT
-        // Either from the cache or calculate it
-        // Pretty fast already, so caching doesn't make a huge difference
-        // Atleast compared to opening and processing the images
-        let data_matrix: Vec<Vec<f64>> = match *cache {
-            Some(ref c) => {
-                match c.get_matrix_from_cache(&Path::new(self.prepared_image.orig_path), width as u32) {
-                    Some(matrix) => matrix,
-                    None => {
-                        let matrix = create_data_matrix(width, height, &self.prepared_image);
-                        // Store this DFT in the cache
-                        match c.put_matrix_in_cache(&Path::new(self.prepared_image.orig_path), width as u32, &matrix) {
-                            Ok(_) => {}
-                            Err(e) => println!("Unable to store matrix in cache. {}", e),
-                        };
-                        matrix
+                // Get 2d data to 2d FFT/DFT
+                // Either from the cache or calculate it
+                // Pretty fast already, so caching doesn't make a huge difference
+                // Atleast compared to opening and processing the images
+                let data_matrix: Vec<Vec<f64>> = match *cache {
+                    Some(ref c) => {
+                        match c.get_matrix_from_cache(&Path::new(self.prepared_image.orig_path), width as u32) {
+                            Some(matrix) => matrix,
+                            None => {
+                                let matrix = create_data_matrix(width, height, &image);
+                                // Store this DFT in the cache
+                                match c.put_matrix_in_cache(&Path::new(self.prepared_image.orig_path), width as u32, &matrix) {
+                                    Ok(_) => {}
+                                    Err(e) => println!("Unable to store matrix in cache. {}", e),
+                                };
+                                matrix
+                            }
+                        }
+                    },
+                    None => create_data_matrix(width, height, &image)
+                };
+
+                // Only need the top left quadrant
+                let target_width = (width / 4) as usize;
+                let target_height = (height / 4) as usize;
+                let dft_width = (width / 4) as f64;
+                let dft_height = (height / 4) as f64;
+
+                // Calculate the mean
+                let mut total = 0f64;
+                for x in 0..target_width {
+                    for y in 0..target_height {
+                        total += data_matrix[x][y];
                     }
                 }
-            },
-            None => create_data_matrix(width, height, &self.prepared_image)
-        };
+                let mean = total / (dft_width * dft_height);
 
-        // Only need the top left quadrant
-        let target_width = (width / 4) as usize;
-        let target_height = (height / 4) as usize;
-        let dft_width = (width / 4) as f64;
-        let dft_height = (height / 4) as f64;
-
-        // Calculate the mean
-        let mut total = 0f64;
-        for x in 0..target_width {
-            for y in 0..target_height {
-                total += data_matrix[x][y];
-            }
-        }
-        let mean = total / (dft_width * dft_height);
-
-        // Calculating a hash based on the mean
-        let mut hash = 0u64;
-        for x in 0..target_width {
-            // println!("Mean: {} Values: {:?}",mean,data_matrix[x]);
-            for y in 0..target_height {
-                if data_matrix[x][y] >= mean {
-                    hash |= 1;
-                    // println!("Pixel {} is >= {} therefore {:b}", pixel_sum, mean, hash);
-                } else {
-                    hash |= 0;
-                    // println!("Pixel {} is < {} therefore {:b}", pixel_sum, mean, hash);
+                // Calculating a hash based on the mean
+                let mut hash = 0u64;
+                for x in 0..target_width {
+                    // println!("Mean: {} Values: {:?}",mean,data_matrix[x]);
+                    for y in 0..target_height {
+                        if data_matrix[x][y] >= mean {
+                            hash |= 1;
+                            // println!("Pixel {} is >= {} therefore {:b}", pixel_sum, mean, hash);
+                        } else {
+                            hash |= 0;
+                            // println!("Pixel {} is < {} therefore {:b}", pixel_sum, mean, hash);
+                        }
+                        hash <<= 1;
+                    }
                 }
-                hash <<= 1;
-            }
+                // println!("Hash for {} is {}", prepared_image.orig_path, hash);
+                hash
+            }, 
+            None => 0u64
         }
-        // println!("Hash for {} is {}", prepared_image.orig_path, hash);
-        hash
     }
 }
 
-fn create_data_matrix(width: usize, height: usize, prepared_image: &PreparedImage) -> Vec<Vec<f64>> {
+fn create_data_matrix(width: usize, height: usize, image: &super::image::ImageBuffer<super::image::Luma<u8>, Vec<u8>>) -> Vec<Vec<f64>> {
     let mut data_matrix: Vec<Vec<f64>> = Vec::new();
     // Preparing the results
     for x in 0..width {
@@ -102,8 +107,7 @@ fn create_data_matrix(width: usize, height: usize, prepared_image: &PreparedImag
             let pos_x = x as u32;
             let pos_y = y as u32;
             data_matrix[x]
-                .push(prepared_image
-                          .image
+                .push(image
                           .get_pixel(pos_x, pos_y)
                           .channels()[0] as f64);
         }
