@@ -52,6 +52,7 @@ impl PartialEq<CacheMetadata> for CacheMetadata {
 /**
 * Structure to hold implementation of the cache
 */
+#[repr(C)]
 pub struct Cache<'a> {
     pub cache_dir: &'a str,
     pub use_cache: bool,
@@ -160,6 +161,7 @@ impl<'a> Cache<'a> {
                                              sha1,
                                              CACHED_IMAGE_EXT);
                 let cache_dir_str = format!("{}/image/{}x{}", self.cache_dir, size, size);
+                //println!("Saving: {}", cache_path_str);
                 match create_dir_all(cache_dir_str) {
                     Ok(_) => {
                         let cached_path = Path::new(&cache_path_str);

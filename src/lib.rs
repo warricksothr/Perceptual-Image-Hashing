@@ -18,8 +18,9 @@ use std::path::Path;
 use std::ffi::CStr;
 use cache::Cache;
 
+#[repr(C)]
 pub struct PIHash<'a> {
-	cache: Option<Box<Cache<'a>>>
+	cache: Option<Cache<'a>>
 }
 
 impl<'a> PIHash<'a> {
@@ -31,7 +32,7 @@ impl<'a> PIHash<'a> {
 			Some(path) => { 
 				let cache = Cache { cache_dir: path, use_cache: true};
 				match cache.init() {
-					Ok(_) => PIHash { cache: Some(Box::new(cache)) },
+					Ok(_) => PIHash { cache: Some(cache) },
 					Err(e) => {
 						println!("Error creating library with cache: {}", e);
 						PIHash { cache: None }
@@ -68,7 +69,7 @@ impl<'a> PIHash<'a> {
 	pub fn get_phash(&self, path: &Path) -> u64 {
 	    hash::get_perceptual_hash(&path,
 	                              &hash::Precision::Medium,
-	                              &hash::HashType::DHash,
+	                              &hash::HashType::PHash,
 	                              &self.cache)
 	}
 }
@@ -83,93 +84,91 @@ pub fn get_hamming_distance(hash1: u64, hash2: u64) -> u64 {
 
 // External proxies for the get_*hash methods //
 
-// /**
-//  * Prepare the library for work.
-//  *
-//  * Not performing this step may cause parts to fail.
-//  */
-// #[no_mangle]
-// pub extern "C" fn init() {
-//     match LIB_CACHE.init() {
-//         Ok(_) => {}
-//         Err(e) => println!("Error: {}", e),
-//     }
-// }
+#[no_mangle]
+pub extern "C" fn ext_init(cache_path_char: *const libc::c_char) -> *const libc::c_void {
+	unsafe {
+        let path_cstr = CStr::from_ptr(cache_path_char);
+        let path_str = match path_cstr.to_str() {
+        	Ok(path) => Some(path),
+        	Err(_) => None,
+        };
+        //println!("Created new lib, with cache at {}", path_str.unwrap());
+        let lib = Box::new(PIHash::new(path_str));
+        let ptr = Box::into_raw(lib) as *mut libc::c_void;
+        ptr
+     }
+}
 
-// /**
-//  * Teardown for the library
-//  */
-// #[no_mangle]
-// pub extern "C" fn teardown() {
-//     match LIB_CACHE.clean() {
-//         Ok(_) => {}
-//         Err(e) => println!("Error: {}", e),
-//     }
-// }
+#[no_mangle]
+pub extern "C" fn ext_free(raw_lib: *const libc::c_void) {
+	unsafe {
+		drop(Box::from_raw(raw_lib as *mut PIHash));
+	}
+}
 
-// #[no_mangle]
-// pub extern "C" fn ext_get_ahash(path_char: *const libc::c_char) -> libc::uint64_t {
-//     unsafe {
-//         let path_str = CStr::from_ptr(path_char);
-//         let image_path = match path_str.to_str() {
-//             Ok(result) => result,
-//             Err(e) => {
-//                 println!("Error: {}. Unable to parse '{}'",
-//                          e,
-//                          to_hex_string(path_str.to_bytes()));
-//                 panic!("Unable to parse path")
-//             }
-//         };
-//         let path = Path::new(&image_path);
-//         get_ahash(&path)
-//     }
-// }
+#[no_mangle]
+pub extern "C" fn ext_get_ahash(lib: &PIHash, path_char: *const libc::c_char) -> libc::uint64_t {
+    unsafe {
+        let path_str = CStr::from_ptr(path_char);
+        let image_path = match path_str.to_str() {
+            Ok(result) => result,
+            Err(e) => {
+                println!("Error: {}. Unable to parse '{}'",
+                         e,
+                         to_hex_string(path_str.to_bytes()));
+                panic!("Unable to parse path")
+            }
+        };
+        let path = Path::new(&image_path);
+        lib.get_ahash(&path)
+    }
+}
 
-// #[no_mangle]
-// pub extern "C" fn ext_get_dhash(path_char: *const libc::c_char) -> libc::uint64_t {
-//     unsafe {
-//         let path_str = CStr::from_ptr(path_char);
-//         let image_path = match path_str.to_str() {
-//             Ok(result) => result,
-//             Err(e) => {
-//                 println!("Error: {}. Unable to parse '{}'",
-//                          e,
-//                          to_hex_string(path_str.to_bytes()));
-//                 panic!("Unable to parse path")
-//             }
-//         };
-//         let path = Path::new(&image_path);
-//         get_dhash(&path)
-//     }
-// }
+#[no_mangle]
+pub extern "C" fn ext_get_dhash(lib: &PIHash, path_char: *const libc::c_char) -> libc::uint64_t {
+    unsafe {
+        let path_str = CStr::from_ptr(path_char);
+        let image_path = match path_str.to_str() {
+            Ok(result) => result,
+            Err(e) => {
+                println!("Error: {}. Unable to parse '{}'",
+                         e,
+                         to_hex_string(path_str.to_bytes()));
+                panic!("Unable to parse path")
+            }
+        };
+        let path = Path::new(&image_path);
+        lib.get_dhash(&path)
+    }
+}
 
-// #[no_mangle]
-// pub extern "C" fn ext_get_phash(path_char: *const libc::c_char) -> libc::uint64_t {
-//     unsafe {
-//         let path_str = CStr::from_ptr(path_char);
-//         let image_path = match path_str.to_str() {
-//             Ok(result) => result,
-//             Err(e) => {
-//                 println!("Error: {}. Unable to parse '{}'",
-//                          e,
-//                          to_hex_string(path_str.to_bytes()));
-//                 panic!("Unable to parse path")
-//             }
-//         };
-//         let path = Path::new(&image_path);
-//         get_phash(&path)
-//     }
-// }
+#[no_mangle]
+pub extern "C" fn ext_get_phash(lib: &PIHash, path_char: *const libc::c_char) -> libc::uint64_t {
+    unsafe {
+        let path_str = CStr::from_ptr(path_char);
+        let image_path = match path_str.to_str() {
+            Ok(result) => result,
+            Err(e) => {
+                println!("Error: {}. Unable to parse '{}'",
+                         e,
+                         to_hex_string(path_str.to_bytes()));
+                panic!("Unable to parse path")
+            }
+        };
+        let path = Path::new(&image_path);
+        lib.get_phash(&path)
+    }
+}
 
-// fn to_hex_string(bytes: &[u8]) -> String {
-//     println!("length: {}", bytes.len());
-//     let mut strs: Vec<String> = Vec::new();
-//     for byte in bytes {
-//         // println!("{:02x}", byte);
-//         strs.push(format!("{:02x}", byte));
-//     }
-//     strs.join("\\x")
-// }
+fn to_hex_string(bytes: &[u8]) -> String {
+    println!("length: {}", bytes.len());
+    let mut strs: Vec<String> = Vec::new();
+    for byte in bytes {
+        // println!("{:02x}", byte);
+        strs.push(format!("{:02x}", byte));
+    }
+    strs.join("\\x")
+}
 
 // Module for the tests
 //
@@ -419,30 +418,10 @@ mod tests {
         // Setup the caches to make sure we're good to properly bench
         // All phashes so that the matricies are pulled from cache as well
         lib.get_perceptual_hash(&Path::new("./test_images/sample_01_large.jpg"),&hash::Precision::Medium,  &hash::HashType::PHash);
-        lib.get_perceptual_hash(&Path::new("./test_images/sample_02_large.jpg"),&hash::Precision::Medium,  &hash::HashType::PHash);
-        lib.get_perceptual_hash(&Path::new("./test_images/sample_03_large.jpg"),&hash::Precision::Medium,  &hash::HashType::PHash);
-        lib.get_perceptual_hash(&Path::new("./test_images/sample_04_large.jpg"),&hash::Precision::Medium,  &hash::HashType::PHash);
 
         bench.iter(|| {
 	        // Sample_01 Bench
-	        lib.get_perceptual_hash(&Path::new("./test_images/sample_01_large.jpg"), &hash::Precision::Medium, &hash::HashType::AHash);
-			lib.get_perceptual_hash(&Path::new("./test_images/sample_01_large.jpg"), &hash::Precision::Medium, &hash::HashType::DHash);
 	        lib.get_perceptual_hash(&Path::new("./test_images/sample_01_large.jpg"), &hash::Precision::Medium, &hash::HashType::PHash);
-
-	        // Sample_02 Bench
-	        lib.get_perceptual_hash(&Path::new("./test_images/sample_02_large.jpg"), &hash::Precision::Medium, &hash::HashType::AHash);
-			lib.get_perceptual_hash(&Path::new("./test_images/sample_02_large.jpg"), &hash::Precision::Medium, &hash::HashType::DHash);
-	        lib.get_perceptual_hash(&Path::new("./test_images/sample_02_large.jpg"), &hash::Precision::Medium, &hash::HashType::PHash);
-
-	        // Sample_03 Bench
-	        lib.get_perceptual_hash(&Path::new("./test_images/sample_02_large.jpg"), &hash::Precision::Medium, &hash::HashType::AHash);
-			lib.get_perceptual_hash(&Path::new("./test_images/sample_02_large.jpg"), &hash::Precision::Medium, &hash::HashType::DHash);
-	        lib.get_perceptual_hash(&Path::new("./test_images/sample_02_large.jpg"), &hash::Precision::Medium, &hash::HashType::PHash);
-
-	        // Sample_04 Bench
-	        lib.get_perceptual_hash(&Path::new("./test_images/sample_04_large.jpg"), &hash::Precision::Medium, &hash::HashType::AHash);
-			lib.get_perceptual_hash(&Path::new("./test_images/sample_04_large.jpg"), &hash::Precision::Medium, &hash::HashType::DHash);
-	        lib.get_perceptual_hash(&Path::new("./test_images/sample_04_large.jpg"), &hash::Precision::Medium, &hash::HashType::PHash);
         })
     }
 
@@ -454,24 +433,7 @@ mod tests {
 
         bench.iter(|| {
 	        // Sample_01 Bench
-	        lib.get_perceptual_hash(&Path::new("./test_images/sample_01_large.jpg"), &hash::Precision::Medium, &hash::HashType::AHash);
-			lib.get_perceptual_hash(&Path::new("./test_images/sample_01_large.jpg"), &hash::Precision::Medium, &hash::HashType::DHash);
 	        lib.get_perceptual_hash(&Path::new("./test_images/sample_01_large.jpg"), &hash::Precision::Medium, &hash::HashType::PHash);
-
-	        // Sample_02 Bench
-	        lib.get_perceptual_hash(&Path::new("./test_images/sample_02_large.jpg"), &hash::Precision::Medium, &hash::HashType::AHash);
-			lib.get_perceptual_hash(&Path::new("./test_images/sample_02_large.jpg"), &hash::Precision::Medium, &hash::HashType::DHash);
-	        lib.get_perceptual_hash(&Path::new("./test_images/sample_02_large.jpg"), &hash::Precision::Medium, &hash::HashType::PHash);
-
-	        // Sample_03 Bench
-	        lib.get_perceptual_hash(&Path::new("./test_images/sample_02_large.jpg"), &hash::Precision::Medium, &hash::HashType::AHash);
-			lib.get_perceptual_hash(&Path::new("./test_images/sample_02_large.jpg"), &hash::Precision::Medium, &hash::HashType::DHash);
-	        lib.get_perceptual_hash(&Path::new("./test_images/sample_02_large.jpg"), &hash::Precision::Medium, &hash::HashType::PHash);
-
-	        // Sample_04 Bench
-	        lib.get_perceptual_hash(&Path::new("./test_images/sample_04_large.jpg"), &hash::Precision::Medium, &hash::HashType::AHash);
-			lib.get_perceptual_hash(&Path::new("./test_images/sample_04_large.jpg"), &hash::Precision::Medium, &hash::HashType::DHash);
-	        lib.get_perceptual_hash(&Path::new("./test_images/sample_04_large.jpg"), &hash::Precision::Medium, &hash::HashType::PHash);
         })
     }
 }

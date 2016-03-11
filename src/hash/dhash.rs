@@ -14,7 +14,7 @@ pub struct DHash<'a> {
 }
 
 impl<'a> DHash<'a> {
-    pub fn new(path: &'a Path, precision: &Precision, cache: &Option<Box<Cache>>) -> Self {
+    pub fn new(path: &'a Path, precision: &Precision, cache: &Option<Cache>) -> Self {
         DHash {
             prepared_image: Box::new(prepare_image(&path, &HashType::DHash, &precision, cache)),
         }
@@ -29,7 +29,7 @@ impl<'a> PerceptualHash for DHash<'a> {
      *
      * Returns a u64 representing the value of the hash
      */
-    fn get_hash(&self, _: &Option<Box<Cache>>) -> u64 {
+    fn get_hash(&self, _: &Option<Cache>) -> u64 {
         match self.prepared_image.image {
             Some(ref image) => {
                 let first_pixel_val = image.pixels().nth(0).unwrap().channels()[0];

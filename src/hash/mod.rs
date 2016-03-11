@@ -107,7 +107,7 @@ pub enum HashType {
 // Traits //
 
 pub trait PerceptualHash {
-    fn get_hash(&self, cache: &Option<Box<Cache>>) -> u64;
+    fn get_hash(&self, cache: &Option<Cache>) -> u64;
 }
 
 // Functions //
@@ -129,7 +129,7 @@ pub trait PerceptualHash {
 pub fn prepare_image<'a>(path: &'a Path,
                          hash_type: &HashType,
                          precision: &Precision,
-                         cache: &Option<Box<Cache>>)
+                         cache: &Option<Cache>)
                          -> PreparedImage<'a> {
     let image_path = path.to_str().unwrap();
     let size: u32 = match *hash_type {
@@ -195,7 +195,7 @@ fn process_image<'a>(image_path: &'a str,
 pub fn get_perceptual_hash<'a>(path: &'a Path,
                                precision: &Precision,
                                hash_type: &HashType,
-                               cache: &Option<Box<Cache>>)
+                               cache: &Option<Cache>)
                                -> u64 {
     match *hash_type {
         HashType::AHash => ahash::AHash::new(&path, &precision, &cache).get_hash(&cache),
@@ -209,7 +209,7 @@ pub fn get_perceptual_hash<'a>(path: &'a Path,
  */
 pub fn get_perceptual_hashes<'a>(path: &'a Path,
                                  precision: &Precision,
-                                 cache: &Option<Box<Cache>>)
+                                 cache: &Option<Cache>)
                                  -> PerceptualHashes<'a> {
     let image_path = path.to_str().unwrap();
     let ahash = ahash::AHash::new(&path, &precision, &cache).get_hash(&cache);

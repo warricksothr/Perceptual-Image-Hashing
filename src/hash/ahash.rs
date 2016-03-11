@@ -14,7 +14,7 @@ pub struct AHash<'a> {
 }
 
 impl<'a> AHash<'a> {
-    pub fn new(path: &'a Path, precision: &Precision, cache: &Option<Box<Cache>>) -> Self {
+    pub fn new(path: &'a Path, precision: &Precision, cache: &Option<Cache>) -> Self {
         AHash {
             prepared_image: Box::new(prepare_image(&path, &HashType::AHash, &precision, cache)),
         }
@@ -29,7 +29,7 @@ impl<'a> PerceptualHash for AHash<'a> {
     *
     * A u64 representing the value of the hash
     */
-    fn get_hash(&self, _: &Option<Box<Cache>>) -> u64 {
+    fn get_hash(&self, _: &Option<Cache>) -> u64 {
         match self.prepared_image.image {
             Some(ref image) => {
                 let (width, height) = image.dimensions();

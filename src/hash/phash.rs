@@ -16,7 +16,7 @@ pub struct PHash<'a> {
 }
 
 impl<'a> PHash<'a> {
-    pub fn new(path: &'a Path, precision: &Precision, cache: &Option<Box<Cache>>) -> Self {
+    pub fn new(path: &'a Path, precision: &Precision, cache: &Option<Cache>) -> Self {
         PHash {
             prepared_image: Box::new(prepare_image(&path, &HashType::PHash, &precision, cache)),
         }
@@ -31,7 +31,7 @@ impl<'a> PerceptualHash for PHash<'a> {
      *
      * Returns a u64 representing the value of the hash
      */
-    fn get_hash(&self, cache: &Option<Box<Cache>>) -> u64 {
+    fn get_hash(&self, cache: &Option<Cache>) -> u64 {
         match self.prepared_image.image {
             Some(ref image) => {
                 // Get the image data into a vector to perform the DFT on.
