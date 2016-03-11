@@ -9,23 +9,25 @@ void print_ustr_bytes(const char []);
 
 int main() {
     void *lib;
+    void *lib_struct;
     
     // declaration for the external functions used
-    void (*init)();
-    void (*teardown)();
-    uint64_t (*get_ahash)(const char *);
-    uint64_t (*get_dhash)(const char *);
-    uint64_t (*get_phash)(const char *);
+    void *(*init)(const char *);
+    void (*free)();
+    uint64_t (*get_ahash)(void *, const char *);
+    uint64_t (*get_dhash)(void *, const char *);
+    uint64_t (*get_phash)(void *, const char *);
 
     //test image locations
     static const char image1PathStr[] = u8"../test_images/sample_01_";
     static const char image2PathStr[] = u8"../test_images/sample_02_";
     static const char image3PathStr[] = u8"../test_images/sample_03_";
+    static const char image4PathStr[] = u8"../test_images/sample_04_";
     
     // Array of pointers to the base image paths to test
     //static const char *imagesSet[] = { image1PathStr, image2PathStr, image3PathStr };
-    static const char *imagesSet[] = { image1PathStr, image2PathStr, image3PathStr };
-    static const int imageSetSize = 3;
+    static const char *imagesSet[] = { image1PathStr, image2PathStr, image3PathStr, image4PathStr };
+    static const int imageSetSize = 4;
 
     // designators for the image sizes
     static const char largeImageSizeStr[] = u8"large";
@@ -43,14 +45,14 @@ int main() {
     lib = dlopen("./libpihash.so", RTLD_LAZY);
 
     //Registering the external functions
-    *(void **)(&init) = dlsym(lib,"init");
-    *(void **)(&teardown) = dlsym(lib,"teardown");
+    *(void **)(&init) = dlsym(lib,"ext_init");
+    *(void **)(&free) = dlsym(lib,"ext_free");
     *(void **)(&get_ahash) = dlsym(lib,"ext_get_ahash");
     *(void **)(&get_dhash) = dlsym(lib,"ext_get_dhash");
     *(void **)(&get_phash) = dlsym(lib,"ext_get_phash");
 
     // Init the shared library
-    init();
+    lib_struct = init(u8"./.hash_cache");
 
     //temp buffer for the path
     char *imagePathBuffer = malloc(100);
@@ -70,9 +72,9 @@ int main() {
             printf("Image: %s\n",imagePathBuffer);
 
             // Printing information about the hashes of the provided images
-            uint64_t imageAhash = get_ahash(imagePathBuffer);
-            uint64_t imageDhash = get_dhash(imagePathBuffer);
-            uint64_t imagePhash = get_phash(imagePathBuffer);
+            uint64_t imageAhash = get_ahash(lib_struct, imagePathBuffer);
+            uint64_t imageDhash = get_dhash(lib_struct, imagePathBuffer);
+            uint64_t imagePhash = get_phash(lib_struct, imagePathBuffer);
             
             printf("ahash: %llu \n", imageAhash);
             printf("dhash: %llu \n", imageDhash);

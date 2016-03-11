@@ -1,7 +1,7 @@
 #include <stdint.h>
 
-void init();
-void teardown();
-uint64_t ext_get_ahash(const char *);
-uint64_t ext_get_dhash(const char *);
-uint64_t ext_get_phash(const char *);
+void *ext_init(const char *);
+void ext_free();
+uint64_t ext_get_ahash(void *, const char *);
+uint64_t ext_get_dhash(void *, const char *);
+uint64_t ext_get_phash(void *, const char *);
