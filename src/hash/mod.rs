@@ -59,10 +59,13 @@ pub struct PerceptualHashes<'a> {
 impl<'a> PerceptualHashes<'a> {
     pub fn similar(&self, other: &'a PerceptualHashes<'a>) -> bool {
         if self.orig_path != other.orig_path &&
-            calculate_hamming_distance(self.ahash, other.ahash) <= HAMMING_DISTANCE_SIMILARITY_LIMIT &&
-            calculate_hamming_distance(self.dhash, other.dhash) <= HAMMING_DISTANCE_SIMILARITY_LIMIT &&
-            calculate_hamming_distance(self.phash, other.phash) <= HAMMING_DISTANCE_SIMILARITY_LIMIT {
-            true 
+           calculate_hamming_distance(self.ahash, other.ahash) <=
+           HAMMING_DISTANCE_SIMILARITY_LIMIT &&
+           calculate_hamming_distance(self.dhash, other.dhash) <=
+           HAMMING_DISTANCE_SIMILARITY_LIMIT &&
+           calculate_hamming_distance(self.phash, other.phash) <=
+           HAMMING_DISTANCE_SIMILARITY_LIMIT {
+            true
         } else {
             false
         }
@@ -146,7 +149,7 @@ pub fn prepare_image<'a>(path: &'a Path,
                         image: Some(image),
                     }
                 }
-                None => { 
+                None => {
                     let processed_image = process_image(&image_path, size);
                     // Oh, and save it in a cache
                     match processed_image.image {
@@ -155,13 +158,13 @@ pub fn prepare_image<'a>(path: &'a Path,
                                 Ok(_) => {}
                                 Err(e) => println!("Unable to store image in cache. {}", e),
                             };
-                        },
+                        }
                         None => {}
                     };
                     processed_image
                 }
             }
-        },
+        }
         None => process_image(&image_path, size),
     }
 }
@@ -169,16 +172,15 @@ pub fn prepare_image<'a>(path: &'a Path,
 /**
  * Turn the image into something we can work with
  */
-fn process_image<'a>(image_path: &'a str,
-                 size: u32) -> PreparedImage<'a> {
+fn process_image<'a>(image_path: &'a str, size: u32) -> PreparedImage<'a> {
     // Otherwise let's do that work now and store it.
-    //println!("Path: {}", image_path);
+    // println!("Path: {}", image_path);
     let image = match image::open(Path::new(image_path)) {
         Ok(image) => {
             let small_image = image.resize_exact(size, size, FilterType::Lanczos3);
             Some(small_image.to_luma())
-        },
-        Err(e) => { 
+        }
+        Err(e) => {
             println!("Error Processing Image [{}]: {} ", image_path, e);
             None
         }

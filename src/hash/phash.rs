@@ -44,20 +44,24 @@ impl<'a> PerceptualHash for PHash<'a> {
                 // Atleast compared to opening and processing the images
                 let data_matrix: Vec<Vec<f64>> = match *cache {
                     Some(ref c) => {
-                        match c.get_matrix_from_cache(&Path::new(self.prepared_image.orig_path), width as u32) {
+                        match c.get_matrix_from_cache(&Path::new(self.prepared_image.orig_path),
+                                                      width as u32) {
                             Some(matrix) => matrix,
                             None => {
                                 let matrix = create_data_matrix(width, height, &image);
                                 // Store this DFT in the cache
-                                match c.put_matrix_in_cache(&Path::new(self.prepared_image.orig_path), width as u32, &matrix) {
+                                match c.put_matrix_in_cache(&Path::new(self.prepared_image
+                                                                           .orig_path),
+                                                            width as u32,
+                                                            &matrix) {
                                     Ok(_) => {}
                                     Err(e) => println!("Unable to store matrix in cache. {}", e),
                                 };
                                 matrix
                             }
                         }
-                    },
-                    None => create_data_matrix(width, height, &image)
+                    }
+                    None => create_data_matrix(width, height, &image),
                 };
 
                 // Only need the top left quadrant
@@ -92,13 +96,16 @@ impl<'a> PerceptualHash for PHash<'a> {
                 }
                 // println!("Hash for {} is {}", prepared_image.orig_path, hash);
                 hash
-            }, 
-            None => 0u64
+            }
+            None => 0u64,
         }
     }
 }
 
-fn create_data_matrix(width: usize, height: usize, image: &super::image::ImageBuffer<super::image::Luma<u8>, Vec<u8>>) -> Vec<Vec<f64>> {
+fn create_data_matrix(width: usize,
+                      height: usize,
+                      image: &super::image::ImageBuffer<super::image::Luma<u8>, Vec<u8>>)
+                      -> Vec<Vec<f64>> {
     let mut data_matrix: Vec<Vec<f64>> = Vec::new();
     // Preparing the results
     for x in 0..width {
@@ -106,10 +113,8 @@ fn create_data_matrix(width: usize, height: usize, image: &super::image::ImageBu
         for y in 0..height {
             let pos_x = x as u32;
             let pos_y = y as u32;
-            data_matrix[x]
-                .push(image
-                          .get_pixel(pos_x, pos_y)
-                          .channels()[0] as f64);
+            data_matrix[x].push(image.get_pixel(pos_x, pos_y)
+                                     .channels()[0] as f64);
         }
     }
 

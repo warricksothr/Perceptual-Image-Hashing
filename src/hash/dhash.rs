@@ -61,8 +61,8 @@ impl<'a> PerceptualHash for DHash<'a> {
                 }
 
                 hash
-            },
-            None => 0u64
+            }
+            None => 0u64,
         }
     }
 }

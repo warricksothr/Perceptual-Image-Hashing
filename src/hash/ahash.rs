@@ -60,8 +60,8 @@ impl<'a> PerceptualHash for AHash<'a> {
                 }
                 // println!("Hash for {} is {}", prepared_image.orig_path, hash);
                 hash
-            },
-            None => 0u64
+            }
+            None => 0u64,
         }
     }
 }
