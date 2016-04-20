@@ -214,19 +214,38 @@ mod tests {
 		*/
     fn test_imageset_hash(hash_type: hash::HashType,
                           hash_precision: hash::Precision,
+                          max_hamming_distance: u64,
                           image_paths: [&Path; 3],
                           image_hashes: [u64; 3],
                           lib: &PIHash) {
+        let mut hashes: [u64; 3] = [0; 3];
         for index in 0..image_paths.len() {
             let image_path = image_paths[index];
             let calculated_hash = lib.get_perceptual_hash(&image_path,
                                                             &hash_precision,
                                                             &hash_type);
-            println!("Image hashes for '{}': expected: {} actual: {}",
+            println!("Image hashes for [{}] expected: [{}] actual: [{}]",
                      image_path.to_str().unwrap(),
                      image_hashes[index],
                      calculated_hash);
             assert!(calculated_hash == image_hashes[index]);
+            hashes[index] = calculated_hash;
+        }
+
+        for index in 0..hashes.len() {
+          for index2 in 0..hashes.len() {
+            if index == index2 {
+              continue;
+            } else {
+              let distance = hash::calculate_hamming_distance(hashes[index], hashes[index2]);
+              println!("Hashes [{}] and [{}] have a hamming distance of [{}] of a max allowed distance of [{}]",
+                     hashes[index],
+                     hashes[index2],
+                     distance,
+                     max_hamming_distance);
+              assert!(distance <= max_hamming_distance);
+            }
+          }
         }
     }
 
@@ -239,9 +258,10 @@ mod tests {
         let sample_01_images: [&Path; 3] = [&Path::new("./test_images/sample_01_large.jpg"),
                                             &Path::new("./test_images/sample_01_medium.jpg"),
                                             &Path::new("./test_images/sample_01_small.jpg")];
-        let sample_01_hashes: [u64; 3] = [857051991849750, 857051991849750, 857051991849750];
+        let sample_01_hashes: [u64; 3] = [857051991849750, 857051991849750, 857051992374038];
         test_imageset_hash(hash::HashType::AHash,
                            hash::Precision::Medium,
+                           1u64,
                            sample_01_images,
                            sample_01_hashes,
                            &lib);
@@ -255,6 +275,7 @@ mod tests {
                                           18446744073441116160];
         test_imageset_hash(hash::HashType::AHash,
                            hash::Precision::Medium,
+                           1u64,
                            sample_02_images,
                            sample_02_hashes,
                            &lib);
@@ -268,6 +289,7 @@ mod tests {
                                           135670932300497406];
         test_imageset_hash(hash::HashType::AHash,
                            hash::Precision::Medium,
+                           1u64,
                            sample_03_images,
                            sample_03_hashes,
                            &lib);
@@ -276,11 +298,12 @@ mod tests {
         let sample_04_images: [&Path; 3] = [&Path::new("./test_images/sample_04_large.jpg"),
                                             &Path::new("./test_images/sample_04_medium.jpg"),
                                             &Path::new("./test_images/sample_04_small.jpg")];
-        let sample_04_hashes: [u64; 3] = [18446460933225054208,
+        let sample_04_hashes: [u64; 3] = [18446460933090836480,
                                           18446460933090836480,
                                           18446460933090836480];
         test_imageset_hash(hash::HashType::AHash,
                            hash::Precision::Medium,
+                           1u64,
                            sample_04_images,
                            sample_04_hashes,
                            &lib);
@@ -303,6 +326,7 @@ mod tests {
                                           7939647627370181174];
         test_imageset_hash(hash::HashType::DHash,
                            hash::Precision::Medium,
+                           1u64,
                            sample_01_images,
                            sample_01_hashes,
                            &lib);
@@ -311,11 +335,12 @@ mod tests {
         let sample_02_images: [&Path; 3] = [&Path::new("./test_images/sample_02_large.jpg"),
                                             &Path::new("./test_images/sample_02_medium.jpg"),
                                             &Path::new("./test_images/sample_02_small.jpg")];
-        let sample_02_hashes: [u64; 3] = [11009829669713008949,
-                                          11009829670249879861,
-                                          11009829669713008949];
+        let sample_02_hashes: [u64; 3] = [11018273919551199541,
+                                          11009266719759587637,
+                                          11009847262435924277];
         test_imageset_hash(hash::HashType::DHash,
                            hash::Precision::Medium,
+                           3u64,
                            sample_02_images,
                            sample_02_hashes,
                            &lib);
@@ -324,11 +349,12 @@ mod tests {
         let sample_03_images: [&Path; 3] = [&Path::new("./test_images/sample_03_large.jpg"),
                                             &Path::new("./test_images/sample_03_medium.jpg"),
                                             &Path::new("./test_images/sample_03_small.jpg")];
-        let sample_03_hashes: [u64; 3] = [225528496439353286,
-                                          225528496439353286,
-                                          226654396346195908];
+        let sample_03_hashes: [u64; 3] = [262683193365159876,
+                                          225528496439353284,
+                                          225528496435158982];
         test_imageset_hash(hash::HashType::DHash,
                            hash::Precision::Medium,
+                           4u64,
                            sample_03_images,
                            sample_03_hashes,
                            &lib);
@@ -342,6 +368,7 @@ mod tests {
                                           14620651386429567209];
         test_imageset_hash(hash::HashType::DHash,
                            hash::Precision::Medium,
+                           1u64,
                            sample_04_images,
                            sample_04_hashes,
                            &lib);
@@ -362,6 +389,7 @@ mod tests {
         let sample_01_hashes: [u64; 3] = [72357778504597504, 72357778504597504, 72357778504597504];
         test_imageset_hash(hash::HashType::PHash,
                            hash::Precision::Medium,
+                           0u64,
                            sample_01_images,
                            sample_01_hashes,
                            &lib);
@@ -375,6 +403,7 @@ mod tests {
                                           5332332327550844928];
         test_imageset_hash(hash::HashType::PHash,
                            hash::Precision::Medium,
+                           0u64,
                            sample_02_images,
                            sample_02_hashes,
                            &lib);
@@ -388,6 +417,7 @@ mod tests {
                                           6917529027641081856];
         test_imageset_hash(hash::HashType::PHash,
                            hash::Precision::Medium,
+                           0u64,
                            sample_03_images,
                            sample_03_hashes,
                            &lib);
@@ -398,9 +428,10 @@ mod tests {
                                             &Path::new("./test_images/sample_04_small.jpg")];
         let sample_04_hashes: [u64; 3] = [10997931646002397184,
                                           10997931646002397184,
-                                          11142046834078253056];
+                                          10997931646002397184];
         test_imageset_hash(hash::HashType::PHash,
                            hash::Precision::Medium,
+                           0u64,
                            sample_04_images,
                            sample_04_hashes,
                            &lib);
