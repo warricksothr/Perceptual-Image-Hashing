@@ -114,13 +114,13 @@ fn get_requested_perceptual_hashes<'a>(lib: &pihash::PIHash,
     };
 
     let dhash = if args.flag_dhash || flags_get_all_perceptual_hashes(&args) {
-        lib.get_ahash(&image_path)
+        lib.get_dhash(&image_path)
     } else {
         0u64
     };
 
     let phash = if args.flag_phash || flags_get_all_perceptual_hashes(&args) {
-        lib.get_ahash(&image_path)
+        lib.get_phash(&image_path)
     } else {
         0u64
     };

@@ -140,7 +140,7 @@ impl<'a> Cache<'a> {
         let mut sha1 = Sha1::new();
         sha1.update(&buf);
         // Return the hex result of the hash
-        Ok(sha1.hexdigest())
+        Ok(sha1.digest().to_string())
     }
 
     /**
