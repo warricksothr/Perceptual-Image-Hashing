@@ -233,14 +233,5 @@ pub fn calculate_hamming_distance(hash1: u64, hash2: u64) -> u64 {
     // The binary xor of the two hashes should give us a number representing
     // the differences between the two hashes. All that's left is to count
     // the number of 1's in the difference to determine the hamming distance
-    let bin_diff = hash1 ^ hash2;
-    let bin_diff_str = format!("{:b}", bin_diff);
-    let mut hamming = 0u64;
-    for bit in bin_diff_str.chars() {
-        match bit {
-            '1' => hamming += 1,
-            _ => continue,
-        }
-    }
-    hamming
+    (hash1 ^ hash2).count_ones() as u64
 }
