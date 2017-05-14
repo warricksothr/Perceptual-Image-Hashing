@@ -7,7 +7,7 @@ use super::dft;
 use super::dft::Transform;
 use super::{HashType, PerceptualHash, Precision, PreparedImage};
 use super::prepare_image;
-use super::image::{GenericImage, Pixel};
+use super::image::Pixel;
 use std::path::Path;
 use cache::Cache;
 

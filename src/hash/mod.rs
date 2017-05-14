@@ -12,7 +12,7 @@ mod phash;
 
 use std::path::Path;
 use std::f64;
-use self::image::{Pixel, FilterType};
+use self::image::FilterType;
 use cache::Cache;
 
 // Constants //
