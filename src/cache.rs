@@ -253,11 +253,10 @@ impl<'a> Cache<'a> {
                                 let mut compressor = ZlibEncoder::new(Vec::new(),
                                                                       Compression::Default);
                                 for row in file_contents {
-                                    let mut row_str = row.iter().fold(String::new(),
-                                                                      |acc, &item| {
-                                                                          acc +
-                                                                          &format!("{},", item)
-                                                                      });
+                                    let mut row_str =
+                                        row.iter()
+                                            .fold(String::new(),
+                                                  |acc, &item| acc + &format!("{},", item));
                                     // remove the last comma
                                     let desire_len = row_str.len() - 1;
                                     row_str.truncate(desire_len);
@@ -319,17 +318,15 @@ impl<'a> Cache<'a> {
                                 }
                             };
                             // convert the matrix
-                            let matrix: Vec<Vec<f64>> = matrix_data_str.trim()
-                                                                       .split("\n")
-                                                                       .map(|line| {
-                                                                           line.split(",")
-                                                                               .map(|f| {
-                                                                                   f64::from_str(f)
-                                                                                       .unwrap()
-                                                                               })
-                                                                               .collect()
-                                                                       })
-                                                                       .collect();
+                            let matrix: Vec<Vec<f64>> = matrix_data_str
+                                .trim()
+                                .split("\n")
+                                .map(|line| {
+                                         line.split(",")
+                                             .map(|f| f64::from_str(f).unwrap())
+                                             .collect()
+                                     })
+                                .collect();
 
                             Some(matrix)
                         }
