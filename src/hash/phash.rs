@@ -49,9 +49,7 @@ impl<'a> PerceptualHash for PHash<'a> {
                             Some(matrix) => matrix,
                             None => {
                                 let matrix = create_data_matrix(width, height, &image);
-                                // Store this DFT in the cache
-                                match c.put_matrix_in_cache(&Path::new(self.prepared_image
-                                                                           .orig_path),
+                                match c.put_matrix_in_cache(&Path::new(self.prepared_image.orig_path),
                                                             width as u32,
                                                             &matrix) {
                                     Ok(_) => {}
@@ -82,19 +80,15 @@ impl<'a> PerceptualHash for PHash<'a> {
                 // Calculating a hash based on the mean
                 let mut hash = 0u64;
                 for x in 0..target_width {
-                    // println!("Mean: {} Values: {:?}",mean,data_matrix[x]);
                     for y in 0..target_height {
                         if data_matrix[x][y] >= mean {
                             hash |= 1;
-                            // println!("Pixel {} is >= {} therefore {:b}", pixel_sum, mean, hash);
                         } else {
                             hash |= 0;
-                            // println!("Pixel {} is < {} therefore {:b}", pixel_sum, mean, hash);
                         }
                         hash <<= 1;
                     }
                 }
-                // println!("Hash for {} is {}", prepared_image.orig_path, hash);
                 hash
             }
             None => 0u64,
@@ -113,8 +107,7 @@ fn create_data_matrix(width: usize,
         for y in 0..height {
             let pos_x = x as u32;
             let pos_y = y as u32;
-            data_matrix[x].push(image.get_pixel(pos_x, pos_y)
-                                     .channels()[0] as f64);
+            data_matrix[x].push(image.get_pixel(pos_x, pos_y).channels()[0] as f64);
         }
     }
 

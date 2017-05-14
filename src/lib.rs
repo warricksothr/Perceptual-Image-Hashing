@@ -25,9 +25,9 @@ pub struct PIHash<'a> {
 
 impl<'a> PIHash<'a> {
     /**
-	 * Create a new pihash library, and initialize a cache of a path is passed.
-   * If none is passed then no cache is initialized or used with the library
-	 */
+     * Create a new pihash library, and initialize a cache of a path is passed.
+     * If none is passed then no cache is initialized or used with the library
+     */
     pub fn new(cache_path: Option<&'a str>) -> PIHash<'a> {
         match cache_path {
             Some(path) => {
@@ -180,7 +180,7 @@ fn to_hex_string(bytes: &[u8]) -> String {
 
 // Module for the tests
 //
- #[cfg(test)]
+#[cfg(test)]
 mod tests {
 
     use std::fs;
@@ -202,24 +202,24 @@ mod tests {
                 Some(_) => {
                     if ext.unwrap() == "jpg" {
                         num_paths += 1;
-                        println!("Is a image {}: {:?}", num_paths, orig_path) ;
+                        println!("Is a image {}: {:?}", num_paths, orig_path);
                     }
                 }
                 _ => {
-                    println!("Not an image: {:?}", orig_path) ;
+                    println!("Not an image: {:?}", orig_path);
                     continue;
                 }
             }
             // println!("Name: {}", path.unwrap().path().display())
         }
-        // Currently 12 images in the test imaages directory
-        assert!(num_paths == 12);
+        // Currently 12 images in the test images directory
+        assert_eq!(num_paths, 12);
     }
 
     /**
-		* Updated test function. Assumes 3 images to a set and no hamming distances.
-		* We don't need to confirm that the hamming distance calculation works in these tests.
-		*/
+     * Updated test function. Assumes 3 images to a set and no hamming distances.
+     * We don't need to confirm that the hamming distance calculation works in these tests.
+     */
     fn test_imageset_hash(hash_type: hash::HashType,
                           hash_precision: hash::Precision,
                           max_hamming_distance: u64,
@@ -234,7 +234,7 @@ mod tests {
                      image_path.to_str().unwrap(),
                      image_hashes[index],
                      calculated_hash);
-            assert!(calculated_hash == image_hashes[index]);
+            assert_eq!(calculated_hash, image_hashes[index]);
             hashes[index] = calculated_hash;
         }
 
@@ -244,8 +244,7 @@ mod tests {
                     continue;
                 } else {
                     let distance = hash::calculate_hamming_distance(hashes[index], hashes[index2]);
-                    println!("Hashes [{}] and [{}] have a hamming distance of [{}] of a max \
-                              allowed distance of [{}]",
+                    println!("Hashes [{}] and [{}] have a hamming distance of [{}] of a max allowed distance of [{}]",
                              hashes[index],
                              hashes[index2],
                              distance,
@@ -291,9 +290,8 @@ mod tests {
         let sample_03_images: [&Path; 3] = [&Path::new("./test_images/sample_03_large.jpg"),
                                             &Path::new("./test_images/sample_03_medium.jpg"),
                                             &Path::new("./test_images/sample_03_small.jpg")];
-        let sample_03_hashes: [u64; 3] = [135670932300497406,
-                                          135670932300497406,
-                                          135670932300497406];
+        let sample_03_hashes: [u64; 3] =
+            [135670932300497406, 135670932300497406, 135670932300497406];
         test_imageset_hash(hash::HashType::AHash,
                            hash::Precision::Medium,
                            1u64,
@@ -356,9 +354,8 @@ mod tests {
         let sample_03_images: [&Path; 3] = [&Path::new("./test_images/sample_03_large.jpg"),
                                             &Path::new("./test_images/sample_03_medium.jpg"),
                                             &Path::new("./test_images/sample_03_small.jpg")];
-        let sample_03_hashes: [u64; 3] = [262683193365159876,
-                                          225528496439353284,
-                                          225528496435158982];
+        let sample_03_hashes: [u64; 3] =
+            [262683193365159876, 225528496439353284, 225528496435158982];
         test_imageset_hash(hash::HashType::DHash,
                            hash::Precision::Medium,
                            4u64,
@@ -460,11 +457,11 @@ mod tests {
                                 &hash::HashType::PHash);
 
         bench.iter(|| {
-            // Sample_01 Bench
-            lib.get_perceptual_hash(&Path::new("./test_images/sample_01_large.jpg"),
-                                    &hash::Precision::Medium,
-                                    &hash::HashType::PHash);
-        })
+                       // Sample_01 Bench
+                       lib.get_perceptual_hash(&Path::new("./test_images/sample_01_large.jpg"),
+                                               &hash::Precision::Medium,
+                                               &hash::HashType::PHash);
+                   })
     }
 
     #[cfg(feature = "bench")]
@@ -474,10 +471,10 @@ mod tests {
         let lib = PIHash::new(None);
 
         bench.iter(|| {
-            // Sample_01 Bench
-            lib.get_perceptual_hash(&Path::new("./test_images/sample_01_large.jpg"),
-                                    &hash::Precision::Medium,
-                                    &hash::HashType::PHash);
-        })
+                       // Sample_01 Bench
+                       lib.get_perceptual_hash(&Path::new("./test_images/sample_01_large.jpg"),
+                                               &hash::Precision::Medium,
+                                               &hash::HashType::PHash);
+                   })
     }
 }
