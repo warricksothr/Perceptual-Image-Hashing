@@ -204,8 +204,8 @@ mod tests {
             }
             // println!("Name: {}", path.unwrap().path().display())
         }
-        // Currently 12 images in the test imaages directory
-        assert!(num_paths == 12);
+        // Currently 12 images in the test images directory
+        assert_eq!(num_paths, 12);
     }
 
     /**
@@ -228,7 +228,7 @@ mod tests {
                      image_path.to_str().unwrap(),
                      image_hashes[index],
                      calculated_hash);
-            assert!(calculated_hash == image_hashes[index]);
+            assert_eq!(calculated_hash,image_hashes[index]);
             hashes[index] = calculated_hash;
         }
 
@@ -258,7 +258,9 @@ mod tests {
         let sample_01_images: [&Path; 3] = [&Path::new("./test_images/sample_01_large.jpg"),
                                             &Path::new("./test_images/sample_01_medium.jpg"),
                                             &Path::new("./test_images/sample_01_small.jpg")];
-        let sample_01_hashes: [u64; 3] = [857051991849750, 857051991849750, 857051992374038];
+        let sample_01_hashes: [u64; 3] = [857051991849750,
+                                          857051991849750,
+                                          857051992374038];
         test_imageset_hash(hash::HashType::AHash,
                            hash::Precision::Medium,
                            1u64,
@@ -386,7 +388,9 @@ mod tests {
         let sample_01_images: [&Path; 3] = [&Path::new("./test_images/sample_01_large.jpg"),
                                             &Path::new("./test_images/sample_01_medium.jpg"),
                                             &Path::new("./test_images/sample_01_small.jpg")];
-        let sample_01_hashes: [u64; 3] = [72357778504597504, 72357778504597504, 72357778504597504];
+        let sample_01_hashes: [u64; 3] = [72357778504597504,
+                                          72357778504597504,
+                                          72357778504597504];
         test_imageset_hash(hash::HashType::PHash,
                            hash::Precision::Medium,
                            0u64,
