@@ -44,8 +44,8 @@ struct Args {
 
 fn main() {
     let args: Args = Docopt::new(USAGE)
-                         .and_then(|d| d.decode())
-                         .unwrap_or_else(|e| e.exit());
+        .and_then(|d| d.decode())
+        .unwrap_or_else(|e| e.exit());
 
     // Print version information and exit
     if args.flag_version {
@@ -63,8 +63,10 @@ fn main() {
 
         let mut comparison_hashes: Vec<pihash::hash::PerceptualHashes> = Vec::new();
         for index in 0..args.arg_comparison.len() {
-            comparison_hashes.push(get_requested_perceptual_hashes(&lib,
-                &Path::new(&args.arg_comparison[index]), &args));
+            comparison_hashes
+                .push(get_requested_perceptual_hashes(&lib,
+                                                      &Path::new(&args.arg_comparison[index]),
+                                                      &args));
         }
 
         let mut similar_images: Vec<&str> = Vec::new();
