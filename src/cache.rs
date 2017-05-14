@@ -139,8 +139,9 @@ impl<'a> Cache<'a> {
         try!(source.read_to_end(&mut buf));
         let mut sha1 = Sha1::new();
         sha1.update(&buf);
+        let digest = sha1.digest();
         // Return the hex result of the hash
-        Ok(sha1.hexdigest())
+        Ok(format!("{}", digest))
     }
 
     /**
