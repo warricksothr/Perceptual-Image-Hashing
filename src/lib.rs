@@ -25,15 +25,9 @@ pub struct PIHash<'a> {
 
 impl<'a> PIHash<'a> {
     /**
-<<<<<<< HEAD
-	 * Create a new pihash library, and initialize a cache of a path is passed.
-   * If none is passed then no cache is initialized or used with the library
-	 */
-=======
      * Create a new pihash library, and initialize a cache of a path is passed.
      * If none is passed then no cache is initialized or used with the library
      */
->>>>>>> master
     pub fn new(cache_path: Option<&'a str>) -> PIHash<'a> {
         match cache_path {
             Some(path) => {
@@ -223,9 +217,9 @@ mod tests {
     }
 
     /**
-		* Updated test function. Assumes 3 images to a set and no hamming distances.
-		* We don't need to confirm that the hamming distance calculation works in these tests.
-		*/
+     * Updated test function. Assumes 3 images to a set and no hamming distances.
+     * We don't need to confirm that the hamming distance calculation works in these tests.
+     */
     fn test_imageset_hash(hash_type: hash::HashType,
                           hash_precision: hash::Precision,
                           max_hamming_distance: u64,

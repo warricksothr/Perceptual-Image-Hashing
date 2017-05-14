@@ -49,13 +49,7 @@ impl<'a> PerceptualHash for PHash<'a> {
                             Some(matrix) => matrix,
                             None => {
                                 let matrix = create_data_matrix(width, height, &image);
-                                // Store this DFT in the cache
-<<<<<<< HEAD
-                                match c.put_matrix_in_cache(&Path::new(self.prepared_image
-                                                                           .orig_path),
-=======
                                 match c.put_matrix_in_cache(&Path::new(self.prepared_image.orig_path),
->>>>>>> master
                                                             width as u32,
                                                             &matrix) {
                                     Ok(_) => {}
@@ -113,12 +107,7 @@ fn create_data_matrix(width: usize,
         for y in 0..height {
             let pos_x = x as u32;
             let pos_y = y as u32;
-<<<<<<< HEAD
-            data_matrix[x].push(image.get_pixel(pos_x, pos_y)
-                                     .channels()[0] as f64);
-=======
             data_matrix[x].push(image.get_pixel(pos_x, pos_y).channels()[0] as f64);
->>>>>>> master
         }
     }
 
