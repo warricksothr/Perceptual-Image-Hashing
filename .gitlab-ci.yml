@@ -1,15 +1,42 @@
-image: jimmycuadra/rust:latest
 stages:
     - test
 
-test:
-    stage: test
-    script:
-        - rustc -V
-        - cargo -V
-        - cargo test
-    only:
-        - master
-    tags:
-        - docker
-    allow_failure: false
+test stable:
+  image: scorpil/rust:stable
+  stage: test
+  script:
+    - rustc -V
+    - cargo -V
+    - cargo test
+  only:
+    - master
+  tags:
+    - docker
+  allow_failure: false
+
+test beta:
+  image: scorpil/rust:beta
+  stage: test
+  script:
+    - rustc -V
+    - cargo -V
+    - cargo test
+  only:
+    - master
+  tags:
+    - docker
+  allow_failure: true
+
+test nightly:
+  image: scorpil/rust:nightly
+  stage: test
+  script:
+    - rustc -V
+    - cargo -V
+    - cargo test
+  only:
+    - master
+  tags:
+    - docker
+  allow_failure: true
+
