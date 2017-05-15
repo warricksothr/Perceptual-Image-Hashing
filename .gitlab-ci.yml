@@ -11,5 +11,5 @@ test:
     only:
         - master
     tags:
-        - rust
+        - docker-engine
     allow_failure: false
