@@ -11,5 +11,5 @@ test:
     only:
         - master
     tags:
-        - docker-engine
+        - docker
     allow_failure: false
