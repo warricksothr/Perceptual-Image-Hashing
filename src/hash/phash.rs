@@ -2,14 +2,16 @@
 //
 // Licensed under the MIT license<LICENSE-MIT or http://opensource.org/licenses/MIT>.
 // This file may not be copied, modified, or distributed except according to those terms.
+extern crate image;
 
+use cache::Cache;
+use self::image::{GenericImage, DynamicImage};
+use std::path::Path;
+use super::{HashType, PerceptualHash, Precision, PreparedImage};
 use super::dft;
 use super::dft::Transform;
-use super::{HashType, PerceptualHash, Precision, PreparedImage};
-use super::prepare_image;
 use super::image::Pixel;
-use std::path::Path;
-use cache::Cache;
+use super::prepare_image;
 
 pub struct PHash<'a> {
     prepared_image: Box<PreparedImage<'a>>,
@@ -98,7 +100,7 @@ impl<'a> PerceptualHash for PHash<'a> {
 
 fn create_data_matrix(width: usize,
                       height: usize,
-                      image: &super::image::ImageBuffer<super::image::Luma<u8>, Vec<u8>>)
+                      image: &DynamicImage)
                       -> Vec<Vec<f64>> {
     let mut data_matrix: Vec<Vec<f64>> = Vec::new();
     // Preparing the results

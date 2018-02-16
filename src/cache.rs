@@ -3,22 +3,23 @@
 // Licensed under the MIT license<LICENSE-MIT or http://opensource.org/licenses/MIT>.
 // This file may not be copied, modified, or distributed except according to those terms.
 
-extern crate num;
 extern crate flate2;
 extern crate image;
+extern crate num;
 extern crate sha1;
 
-use self::image::ImageBuffer;
-use self::sha1::Sha1;
 use self::flate2::Compression;
-use self::flate2::write::ZlibEncoder;
 use self::flate2::read::ZlibDecoder;
-use std::str::FromStr;
-use std::path::Path;
-use std::fs::{File, create_dir_all, remove_dir_all};
-use std::io::{Read, Error, Write};
+use self::flate2::write::ZlibEncoder;
+use self::image::DynamicImage;
+use self::sha1::Sha1;
+use std::default::Default;
+use std::fs::{create_dir_all, File, remove_dir_all};
+use std::io::{Error, ErrorKind, Read, Write};
 use std::option::Option;
+use std::path::Path;
 use std::result::Result;
+use std::str::FromStr;
 use super::rustc_serialize::json;
 
 pub const DEFAULT_CACHE_DIR: &'static str = "./.hash_cache";
@@ -150,7 +151,7 @@ impl<'a> Cache<'a> {
     pub fn put_image_in_cache(&self,
                               path: &Path,
                               size: u32,
-                              image: &ImageBuffer<image::Luma<u8>, Vec<u8>>)
+                              image: &DynamicImage)
                               -> Result<bool, Error> {
         let hash = self.get_file_hash(&path);
         match hash {
@@ -165,17 +166,21 @@ impl<'a> Cache<'a> {
                 // println!("Saving: {}", cache_path_str);
                 match create_dir_all(cache_dir_str) {
                     Ok(_) => {
-                        let cached_path = Path::new(&cache_path_str);
-                        // Save the file into the cache
-                        match image.save(cached_path) {
-                            Ok(_) => {}
-                            Err(e) => {
-                                println!("Error: {}", e);
-                                return Err(e);
+                        match File::create(Path::new(&cache_path_str)) {
+                            Ok(mut file) => {
+                                // Save the file into the cache
+                                match image.save(& mut file, image::ImageFormat::PNG) {
+                                    Ok(_) => {}
+                                    Err(e) => {
+                                        println ! ("Error: {}", e);
+                                        return Err(Error::new(ErrorKind::Other, e));
+                                    }
+                                }
                             }
+                            Err(e) => return Err(e),
                         }
                     }
-                    Err(e) => println!("Error: {}", e),
+                    Err(e) => return Err(e),
                 }
             }
             Err(e) => {
@@ -192,7 +197,7 @@ impl<'a> Cache<'a> {
     pub fn get_image_from_cache(&self,
                                 path: &Path,
                                 size: u32)
-                                -> Option<ImageBuffer<image::Luma<u8>, Vec<u8>>> {
+                                -> Option<DynamicImage> {
         if self.use_cache {
             let hash = self.get_file_hash(&path);
             match hash {
@@ -209,7 +214,7 @@ impl<'a> Cache<'a> {
                     match File::open(&cached_path) {
                         Ok(_) => {
                             let image = image::open(&cached_path).unwrap();
-                            Some(image.to_luma())
+                            Some(image)
                         }
                         // Don't really care here, it just means an existing cached
                         // file doesn't exist, or can't be read.
@@ -251,7 +256,7 @@ impl<'a> Cache<'a> {
                         match File::create(&cached_path) {
                             Ok(mut file) => {
                                 let mut compressor = ZlibEncoder::new(Vec::new(),
-                                                                      Compression::Default);
+                                                                      Compression::default());
                                 for row in file_contents {
                                     let mut row_str =
                                         row.iter()
@@ -322,10 +327,10 @@ impl<'a> Cache<'a> {
                                 .trim()
                                 .split("\n")
                                 .map(|line| {
-                                         line.split(",")
-                                             .map(|f| f64::from_str(f).unwrap())
-                                             .collect()
-                                     })
+                                    line.split(",")
+                                        .map(|f| f64::from_str(f).unwrap())
+                                        .collect()
+                                })
                                 .collect();
 
                             Some(matrix)

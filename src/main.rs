@@ -3,12 +3,14 @@
 // Licensed under the MIT license<LICENSE-MIT or http://opensource.org/licenses/MIT>.
 // This file may not be copied, modified, or distributed except according to those terms.
 
+extern crate docopt;
 extern crate pihash;
 extern crate rustc_serialize;
-extern crate docopt;
+#[macro_use]
+extern crate serde_derive;
 
-use std::path::Path;
 use docopt::Docopt;
+use std::path::Path;
 
 // Getting the version information from cargo during compile time
 const VERSION: &'static str = env!("CARGO_PKG_VERSION");
@@ -32,7 +34,7 @@ Options:
     -p, --phash     Include an phash calculation.
 ";
 
-#[derive(Debug, RustcDecodable)]
+#[derive(Debug, Deserialize)]
 struct Args {
     flag_version: bool,
     flag_ahash: bool,
@@ -44,7 +46,7 @@ struct Args {
 
 fn main() {
     let args: Args = Docopt::new(USAGE)
-        .and_then(|d| d.decode())
+        .and_then(|d| d.deserialize())
         .unwrap_or_else(|e| e.exit());
 
     // Print version information and exit
@@ -82,7 +84,6 @@ fn main() {
         for similar_image in similar_images {
             println!("{}", similar_image);
         }
-
     } else {
         let image_path = Path::new(&args.arg_path);
         let hashes = get_requested_perceptual_hashes(&lib, &image_path, &args);
@@ -102,7 +103,7 @@ fn main() {
 
 fn flags_get_all_perceptual_hashes(args: &Args) -> bool {
     (args.flag_ahash && args.flag_dhash && args.flag_phash) ||
-    (!args.flag_ahash && !args.flag_dhash && !args.flag_phash)
+        (!args.flag_ahash && !args.flag_dhash && !args.flag_phash)
 }
 
 fn get_requested_perceptual_hashes<'a>(lib: &pihash::PIHash,

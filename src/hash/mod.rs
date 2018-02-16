@@ -6,14 +6,15 @@
 extern crate dft;
 extern crate image;
 
+use cache::Cache;
+use self::image::FilterType;
+use std::f64;
+use std::path::Path;
+use std::fmt;
+
 mod ahash;
 mod dhash;
 mod phash;
-
-use std::path::Path;
-use std::f64;
-use self::image::FilterType;
-use cache::Cache;
 
 // Constants //
 
@@ -43,7 +44,7 @@ const HAMMING_DISTANCE_SIMILARITY_LIMIT: u64 = 5u64;
  */
 pub struct PreparedImage<'a> {
     orig_path: &'a str,
-    image: Option<image::ImageBuffer<image::Luma<u8>, Vec<u8>>>,
+    image: Option<image::DynamicImage>,
 }
 
 /**
@@ -59,12 +60,12 @@ pub struct PerceptualHashes<'a> {
 impl<'a> PerceptualHashes<'a> {
     pub fn similar(&self, other: &'a PerceptualHashes<'a>) -> bool {
         if self.orig_path != other.orig_path &&
-           calculate_hamming_distance(self.ahash, other.ahash) <=
-           HAMMING_DISTANCE_SIMILARITY_LIMIT &&
-           calculate_hamming_distance(self.dhash, other.dhash) <=
-           HAMMING_DISTANCE_SIMILARITY_LIMIT &&
-           calculate_hamming_distance(self.phash, other.phash) <=
-           HAMMING_DISTANCE_SIMILARITY_LIMIT {
+            calculate_hamming_distance(self.ahash, other.ahash) <=
+                HAMMING_DISTANCE_SIMILARITY_LIMIT &&
+            calculate_hamming_distance(self.dhash, other.dhash) <=
+                HAMMING_DISTANCE_SIMILARITY_LIMIT &&
+            calculate_hamming_distance(self.phash, other.phash) <=
+                HAMMING_DISTANCE_SIMILARITY_LIMIT {
             true
         } else {
             false
@@ -105,6 +106,16 @@ pub enum HashType {
     AHash,
     DHash,
     PHash,
+}
+
+impl fmt::Display for HashType {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            HashType::AHash => write!(f, "AHash"),
+            HashType::DHash => write!(f, "DHash"),
+            HashType::PHash => write!(f, "PHash")
+        }
+    }
 }
 
 // Traits //
@@ -178,7 +189,7 @@ fn process_image<'a>(image_path: &'a str, size: u32) -> PreparedImage<'a> {
     let image = match image::open(Path::new(image_path)) {
         Ok(image) => {
             let small_image = image.resize_exact(size, size, FilterType::Lanczos3);
-            Some(small_image.to_luma())
+            Some(small_image.grayscale())
         }
         Err(e) => {
             println!("Error Processing Image [{}]: {} ", image_path, e);
@@ -187,7 +198,7 @@ fn process_image<'a>(image_path: &'a str, size: u32) -> PreparedImage<'a> {
     };
     PreparedImage {
         orig_path: &*image_path,
-        image: image,
+        image,
     }
 }
 

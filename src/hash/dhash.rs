@@ -2,12 +2,13 @@
 //
 // Licensed under the MIT license<LICENSE-MIT or http://opensource.org/licenses/MIT>.
 // This file may not be copied, modified, or distributed except according to those terms.
+extern crate image;
 
+use cache::Cache;
+use self::image::GenericImage;
+use std::path::Path;
 use super::{HashType, PerceptualHash, Precision, PreparedImage};
 use super::prepare_image;
-use super::image::Pixel;
-use std::path::Path;
-use cache::Cache;
 
 pub struct DHash<'a> {
     prepared_image: Box<PreparedImage<'a>>,
@@ -32,29 +33,30 @@ impl<'a> PerceptualHash for DHash<'a> {
     fn get_hash(&self, _: &Option<Cache>) -> u64 {
         match self.prepared_image.image {
             Some(ref image) => {
-                let first_pixel_val = image.pixels().nth(0).unwrap().channels()[0];
-                let last_pixel_val = image.pixels().last().unwrap().channels()[0];
+                let (_, _, first_pixel) = image.pixels().nth(0).unwrap();
+                let (_, _, last_pixel) = image.pixels().last().unwrap();
+                let first_pixel_value = first_pixel.data[0] as u64;
+                let last_pixel_value = last_pixel.data[0] as u64;
 
                 // Calculate the dhash
-                let mut previous_pixel_val = 0u64;
+                let mut previous_pixel_value = 0u64;
                 let mut hash = 0u64;
-                for (index, pixel) in image.pixels().enumerate() {
-                    if index == 0 {
-                        previous_pixel_val = pixel.channels()[0] as u64;
+                for (x, y, pixel) in image.pixels() {
+                    if x == 0 && y == 0 {
+                        previous_pixel_value = pixel.data[0] as u64;
                         continue;
                     }
-                    let channels = pixel.channels();
-                    let pixel_val = channels[0] as u64;
-                    if pixel_val >= previous_pixel_val {
+                    let pixel_val = pixel.data[0] as u64;
+                    if pixel_val >= previous_pixel_value {
                         hash |= 1;
                     } else {
                         hash |= 0;
                     }
                     hash <<= 1;
-                    previous_pixel_val = channels[0] as u64;
+                    previous_pixel_value = first_pixel_value;
                 }
 
-                if first_pixel_val >= last_pixel_val {
+                if first_pixel_value >= last_pixel_value {
                     hash |= 1;
                 } else {
                     hash |= 0;

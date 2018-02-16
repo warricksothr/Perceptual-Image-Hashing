@@ -3,11 +3,13 @@
 // Licensed under the MIT license<LICENSE-MIT or http://opensource.org/licenses/MIT>.
 // This file may not be copied, modified, or distributed except according to those terms.
 
+extern crate image;
+
+use cache::Cache;
+use self::image::GenericImage;
+use std::path::Path;
 use super::{HashType, PerceptualHash, Precision, PreparedImage};
 use super::prepare_image;
-use super::image::Pixel;
-use std::path::Path;
-use cache::Cache;
 
 pub struct AHash<'a> {
     prepared_image: Box<PreparedImage<'a>>,
@@ -36,20 +38,16 @@ impl<'a> PerceptualHash for AHash<'a> {
 
                 // calculating the average pixel value
                 let mut total = 0u64;
-                for pixel in image.pixels() {
-                    let channels = pixel.channels();
-                    // println!("Pixel is: {}", channels[0]);
-                    total += channels[0] as u64;
+                for (_, _, pixel) in image.pixels() {
+                    total += pixel.data[0] as u64;
                 }
-                let mean = total / (width * height) as u64;
+                let mean = total / (height * width) as u64;
                 // println!("Mean for {} is {}", prepared_image.orig_path, mean);
 
                 // Calculating a hash based on the mean
                 let mut hash = 0u64;
-                for pixel in image.pixels() {
-                    let channels = pixel.channels();
-                    let pixel_sum = channels[0] as u64;
-                    if pixel_sum >= mean {
+                for (_, _, pixel) in image.pixels() {
+                    if pixel.data[0] as u64 >= mean {
                         hash |= 1;
                         // println!("Pixel {} is >= {} therefore {:b}", pixel_sum, mean, hash);
                     } else {
