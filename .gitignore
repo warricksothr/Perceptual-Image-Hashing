@@ -35,3 +35,7 @@ FFI-tests/*.so
 FFI-tests/*.o
 FFI-tests/*.out
 FFI-tests/_*.c
+
+.idea/
+CMakeLists.txt
+cmake-build-debug/
