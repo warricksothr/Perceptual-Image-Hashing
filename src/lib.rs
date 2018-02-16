@@ -56,7 +56,9 @@ impl<'a> PIHash<'a> {
     }
 
     pub fn get_phashes(&self, path: &'a Path) -> hash::PerceptualHashes {
-        hash::get_perceptual_hashes(path, &hash::Precision::Medium, &self.cache)
+        hash::get_perceptual_hashes(&path,
+                                    &hash::Precision::Medium,
+                                    &self.cache)
     }
 
 
@@ -128,7 +130,7 @@ pub extern "C" fn ext_get_ahash(lib: &PIHash, path_char: *const libc::c_char) ->
             }
         };
         let path = Path::new(&image_path);
-        lib.get_ahash(&path)
+        lib.get_ahash(path)
     }
 }
 
@@ -146,7 +148,7 @@ pub extern "C" fn ext_get_dhash(lib: &PIHash, path_char: *const libc::c_char) ->
             }
         };
         let path = Path::new(&image_path);
-        lib.get_dhash(&path)
+        lib.get_dhash(path)
     }
 }
 
@@ -164,9 +166,47 @@ pub extern "C" fn ext_get_phash(lib: &PIHash, path_char: *const libc::c_char) ->
             }
         };
         let path = Path::new(&image_path);
-        lib.get_phash(&path)
+        lib.get_phash(path)
     }
 }
+
+#[repr(C)]
+pub struct PIHashes {
+    ahash: libc::uint64_t,
+    dhash: libc::uint64_t,
+    phash: libc::uint64_t
+}
+
+#[no_mangle]
+pub extern "C" fn ext_get_phashes(lib: &PIHash, path_char: *const libc::c_char) -> * mut PIHashes {
+    unsafe {
+        let path_str = CStr::from_ptr(path_char);
+        let image_path = match path_str.to_str() {
+            Ok(result) => result,
+            Err(e) => {
+                println!("Error: {}. Unable to parse '{}'",
+                         e,
+                         to_hex_string(path_str.to_bytes()));
+                panic!("Unable to parse path")
+            }
+        };
+        let path = Path::new(&image_path);
+        let phashes = lib.get_phashes(path);
+        Box::into_raw(Box::new(PIHashes {
+            ahash: phashes.ahash,
+            dhash: phashes.dhash,
+            phash: phashes.phash
+        }))
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn ext_free_phashes(raw_phashes: *const libc::c_void) {
+    unsafe {
+        drop(Box::from_raw(raw_phashes as *mut PIHashes));
+    }
+}
+
 
 fn to_hex_string(bytes: &[u8]) -> String {
     println!("length: {}", bytes.len());

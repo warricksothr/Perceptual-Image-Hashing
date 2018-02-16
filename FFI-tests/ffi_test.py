@@ -39,6 +39,13 @@ if os.name == 'nt':
 	lib = CDLL(path)
 else:
 	lib = cdll.LoadLibrary("libpihash.so")
+
+
+class PIHashes(Structure):
+	_fields_ = [
+		("ahash", c_ulonglong),
+		("dhash", c_ulonglong),
+		("phash", c_ulonglong)]
 	
 
 # Setting the ctypes return type references for the foreign functions
@@ -51,6 +58,9 @@ lib.ext_get_dhash.restype = c_ulonglong
 lib.ext_get_dhash.argtypes = [c_void_p, c_char_p]
 lib.ext_get_phash.restype = c_ulonglong
 lib.ext_get_phash.argtypes = [c_void_p, c_char_p]
+lib.ext_get_phashes.restype = c_void_p
+lib.ext_get_phashes.argtypes = [c_void_p, c_char_p]
+lib.ext_free_phashes.argtypes = [c_void_p]
 # Takes a pointer and frees the struct at that memory location
 lib.ext_free.argtypes = [c_void_p]
 
@@ -64,10 +74,16 @@ lib_struct = lib.ext_init("./.hash_cache".encode(encoding="utf-8"))
 #print('\\x'+'\\x'.join('{:02x}'.format(x) for x in large_image_path))
 
 for image in test_images:
-    print("Requesting hashes for: %s"% image)
-    print("ahash: %i"% unsigned64(lib.ext_get_ahash(lib_struct, image)))
-    print("dhash: %i"% unsigned64(lib.ext_get_dhash(lib_struct, image)))
-    print("phash: %i"% unsigned64(lib.ext_get_phash(lib_struct, image)))
+	print("Requesting hashes for: %s"% image)
+	phashes = lib.ext_get_phashes(lib_struct, image)
+	pihashes = PIHashes.from_address(phashes)
+	lib.ext_free_phashes(phashes)
+	print("ahash: %i"% unsigned64(pihashes.ahash))
+	print("dhash: %i"% unsigned64(pihashes.dhash))
+	print("phash: %i"% unsigned64(pihashes.phash))
+	# print("ahash: %i"% unsigned64(lib.ext_get_ahash(lib_struct, image)))
+	# print("dhash: %i"% unsigned64(lib.ext_get_dhash(lib_struct, image)))
+	# print("phash: %i"% unsigned64(lib.ext_get_phash(lib_struct, image)))
 
 # Do cleanup
 # Makes sure that the heap is cleaned up
