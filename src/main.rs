@@ -87,16 +87,17 @@ fn main() {
     } else {
         let image_path = Path::new(&args.arg_path);
         let hashes = get_requested_perceptual_hashes(&lib, &image_path, &args);
-        let hash_result = format!(r#"
-            file: {}
-            ahash: {}
-            dhash: {}
-            phash: {}
-            "#,
-                                  hashes.orig_path,
-                                  hashes.ahash,
-                                  hashes.dhash,
-                                  hashes.phash);
+        let hash_result = format!(
+            r#"
+file: {}
+ahash: {}
+dhash: {}
+phash: {}
+"#,
+            hashes.orig_path,
+            hashes.ahash,
+            hashes.dhash,
+            hashes.phash);
         println!("{}", hash_result);
     }
 }

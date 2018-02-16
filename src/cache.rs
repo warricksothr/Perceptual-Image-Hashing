@@ -137,7 +137,7 @@ impl<'a> Cache<'a> {
     pub fn get_file_hash(&self, path: &Path) -> Result<String, Error> {
         let mut source = try!(File::open(&path));
         let mut buf: Vec<u8> = Vec::new();
-        try!(source.read_to_end(&mut buf));
+        source.read_to_end(&mut buf)?;
         let mut sha1 = Sha1::new();
         sha1.update(&buf);
         let digest = sha1.digest();
@@ -156,23 +156,24 @@ impl<'a> Cache<'a> {
         let hash = self.get_file_hash(&path);
         match hash {
             Ok(sha1) => {
-                let cache_path_str = format!("{}/image/{}x{}/{}.{}",
+                let cache_path_str = format!("{}/image/{}x{}/{}/{}.{}",
                                              self.cache_dir,
                                              size,
                                              size,
+                                             &sha1[..10],
                                              sha1,
                                              CACHED_IMAGE_EXT);
-                let cache_dir_str = format!("{}/image/{}x{}", self.cache_dir, size, size);
+                let cache_dir_str = format!("{}/image/{}x{}/{}", self.cache_dir, size, size, &sha1[..10]);
                 // println!("Saving: {}", cache_path_str);
                 match create_dir_all(cache_dir_str) {
                     Ok(_) => {
                         match File::create(Path::new(&cache_path_str)) {
                             Ok(mut file) => {
                                 // Save the file into the cache
-                                match image.save(& mut file, image::ImageFormat::PNG) {
+                                match image.save(&mut file, image::ImageFormat::PNG) {
                                     Ok(_) => {}
                                     Err(e) => {
-                                        println ! ("Error: {}", e);
+                                        println!("Error: {}", e);
                                         return Err(Error::new(ErrorKind::Other, e));
                                     }
                                 }
@@ -203,10 +204,11 @@ impl<'a> Cache<'a> {
             match hash {
                 Ok(sha1) => {
                     // Check if the file exists in the cache
-                    let cache_path_str = format!("{}/image/{}x{}/{}.{}",
+                    let cache_path_str = format!("{}/image/{}x{}/{}/{}.{}",
                                                  self.cache_dir,
                                                  size,
                                                  size,
+                                                 &sha1[..10],
                                                  sha1,
                                                  CACHED_IMAGE_EXT);
                     let cached_path = Path::new(&cache_path_str);
@@ -242,13 +244,14 @@ impl<'a> Cache<'a> {
         let hash = self.get_file_hash(&path);
         match hash {
             Ok(sha1) => {
-                let cache_path_str = format!("{}/matrix/{}x{}/{}.{}",
+                let cache_path_str = format!("{}/matrix/{}x{}/{}/{}.{}",
                                              self.cache_dir,
                                              size,
                                              size,
+                                             &sha1[..10],
                                              sha1,
                                              CACHED_MATRIX_EXT);
-                let cache_dir_str = format!("{}/matrix/{}x{}", self.cache_dir, size, size);
+                let cache_dir_str = format!("{}/matrix/{}x{}/{}", self.cache_dir, size, size, &sha1[..10]);
                 match create_dir_all(cache_dir_str) {
                     Ok(_) => {
                         let cached_path = Path::new(&cache_path_str);
@@ -303,10 +306,11 @@ impl<'a> Cache<'a> {
             match hash {
                 Ok(sha1) => {
                     // Check if the file exists in the cache
-                    let cache_path_str = format!("{}/matrix/{}x{}/{}.{}",
+                    let cache_path_str = format!("{}/matrix/{}x{}/{}/{}.{}",
                                                  self.cache_dir,
                                                  size,
                                                  size,
+                                                 &sha1[..10],
                                                  sha1,
                                                  CACHED_MATRIX_EXT);
                     let cached_path = Path::new(&cache_path_str);
