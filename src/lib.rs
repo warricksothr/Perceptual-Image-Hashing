@@ -125,17 +125,7 @@ pub extern "C" fn ext_free(raw_lib: *const libc::c_void) {
 pub extern "C" fn ext_get_ahash(lib: &PIHash, path_char: *const libc::c_char) -> u64 {
     unsafe {
         let path_str = CStr::from_ptr(path_char);
-        let image_path = match path_str.to_str() {
-            Ok(result) => result,
-            Err(e) => {
-                println!(
-                    "Error: {}. Unable to parse '{}'",
-                    e,
-                    to_hex_string(path_str.to_bytes())
-                );
-                panic!("Unable to parse path")
-            }
-        };
+        let image_path = get_str_from_cstr(path_str);
         let path = Path::new(&image_path);
         lib.get_ahash(path)
     }
@@ -145,17 +135,7 @@ pub extern "C" fn ext_get_ahash(lib: &PIHash, path_char: *const libc::c_char) ->
 pub extern "C" fn ext_get_dhash(lib: &PIHash, path_char: *const libc::c_char) -> u64 {
     unsafe {
         let path_str = CStr::from_ptr(path_char);
-        let image_path = match path_str.to_str() {
-            Ok(result) => result,
-            Err(e) => {
-                println!(
-                    "Error: {}. Unable to parse '{}'",
-                    e,
-                    to_hex_string(path_str.to_bytes())
-                );
-                panic!("Unable to parse path")
-            }
-        };
+        let image_path = get_str_from_cstr(path_str);
         let path = Path::new(&image_path);
         lib.get_dhash(path)
     }
@@ -165,17 +145,7 @@ pub extern "C" fn ext_get_dhash(lib: &PIHash, path_char: *const libc::c_char) ->
 pub extern "C" fn ext_get_phash(lib: &PIHash, path_char: *const libc::c_char) -> u64 {
     unsafe {
         let path_str = CStr::from_ptr(path_char);
-        let image_path = match path_str.to_str() {
-            Ok(result) => result,
-            Err(e) => {
-                println!(
-                    "Error: {}. Unable to parse '{}'",
-                    e,
-                    to_hex_string(path_str.to_bytes())
-                );
-                panic!("Unable to parse path")
-            }
-        };
+        let image_path = get_str_from_cstr(path_str);
         let path = Path::new(&image_path);
         lib.get_phash(path)
     }
@@ -192,17 +162,7 @@ pub struct PIHashes {
 pub extern "C" fn ext_get_phashes(lib: &PIHash, path_char: *const libc::c_char) -> *mut PIHashes {
     unsafe {
         let path_str = CStr::from_ptr(path_char);
-        let image_path = match path_str.to_str() {
-            Ok(result) => result,
-            Err(e) => {
-                println!(
-                    "Error: {}. Unable to parse '{}'",
-                    e,
-                    to_hex_string(path_str.to_bytes())
-                );
-                panic!("Unable to parse path")
-            }
-        };
+        let image_path = get_str_from_cstr(path_str);
         let path = Path::new(&image_path);
         let phashes = lib.get_phashes(path);
         Box::into_raw(Box::new(PIHashes {
@@ -217,6 +177,20 @@ pub extern "C" fn ext_get_phashes(lib: &PIHash, path_char: *const libc::c_char) 
 pub extern "C" fn ext_free_phashes(raw_phashes: *const libc::c_void) {
     unsafe {
         drop(Box::from_raw(raw_phashes as *mut PIHashes));
+    }
+}
+
+fn get_str_from_cstr(path_str: &CStr) -> &str {
+    match path_str.to_str() {
+        Ok(result) => result,
+        Err(e) => {
+            println!(
+                "Error: {}. Unable to parse '{}'",
+                e,
+                to_hex_string(path_str.to_bytes())
+            );
+            panic!("Unable to parse path")
+        }
     }
 }
 
@@ -292,9 +266,9 @@ mod tests {
                 image_hashes[index],
                 calculated_hash
             );
-            assert_eq!(calculated_hash, image_hashes[index]);
             hashes[index] = calculated_hash;
         }
+        assert_eq!(hashes, image_hashes);
 
         for index in 0..hashes.len() {
             for index2 in 0..hashes.len() {
@@ -328,7 +302,7 @@ mod tests {
         test_imageset_hash(
             hash::HashType::AHash,
             hash::Precision::Medium,
-            1u64,
+            0u64,
             sample_01_images,
             sample_01_hashes,
             &lib,
@@ -348,7 +322,7 @@ mod tests {
         test_imageset_hash(
             hash::HashType::AHash,
             hash::Precision::Medium,
-            3u64,
+            0u64,
             sample_02_images,
             sample_02_hashes,
             &lib,
@@ -365,7 +339,7 @@ mod tests {
         test_imageset_hash(
             hash::HashType::AHash,
             hash::Precision::Medium,
-            1u64,
+            0u64,
             sample_03_images,
             sample_03_hashes,
             &lib,
@@ -471,7 +445,7 @@ mod tests {
         test_imageset_hash(
             hash::HashType::DHash,
             hash::Precision::Medium,
-            1u64,
+            0u64,
             sample_04_images,
             sample_04_hashes,
             &lib,
@@ -496,7 +470,7 @@ mod tests {
         test_imageset_hash(
             hash::HashType::PHash,
             hash::Precision::Medium,
-            1u64,
+            0u64,
             sample_01_images,
             sample_01_hashes,
             &lib,
@@ -516,7 +490,7 @@ mod tests {
         test_imageset_hash(
             hash::HashType::PHash,
             hash::Precision::Medium,
-            1u64,
+            0u64,
             sample_02_images,
             sample_02_hashes,
             &lib,
@@ -556,7 +530,7 @@ mod tests {
         test_imageset_hash(
             hash::HashType::PHash,
             hash::Precision::Medium,
-            3u64,
+            0u64,
             sample_04_images,
             sample_04_hashes,
             &lib,
