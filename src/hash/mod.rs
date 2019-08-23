@@ -183,7 +183,7 @@ pub fn prepare_image<'a>(
 /**
  * Turn the image into something we can work with
  */
-fn process_image<'a>(image_path: &'a str, size: u32) -> PreparedImage<'a> {
+fn process_image(image_path: &str, size: u32) -> PreparedImage {
     // Otherwise let's do that work now and store it.
     // println!("Path: {}", image_path);
     let image = match image::open(Path::new(image_path)) {
