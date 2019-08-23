@@ -123,7 +123,7 @@ pub extern "C" fn ext_free(raw_lib: *const libc::c_void) {
 }
 
 #[no_mangle]
-pub extern "C" fn ext_get_ahash(lib: &PIHash, path_char: *const libc::c_char) -> libc::uint64_t {
+pub extern "C" fn ext_get_ahash(lib: &PIHash, path_char: *const libc::c_char) -> u64 {
     unsafe {
         let path_str = CStr::from_ptr(path_char);
         let image_path = match path_str.to_str() {
@@ -143,7 +143,7 @@ pub extern "C" fn ext_get_ahash(lib: &PIHash, path_char: *const libc::c_char) ->
 }
 
 #[no_mangle]
-pub extern "C" fn ext_get_dhash(lib: &PIHash, path_char: *const libc::c_char) -> libc::uint64_t {
+pub extern "C" fn ext_get_dhash(lib: &PIHash, path_char: *const libc::c_char) -> u64 {
     unsafe {
         let path_str = CStr::from_ptr(path_char);
         let image_path = match path_str.to_str() {
@@ -163,7 +163,7 @@ pub extern "C" fn ext_get_dhash(lib: &PIHash, path_char: *const libc::c_char) ->
 }
 
 #[no_mangle]
-pub extern "C" fn ext_get_phash(lib: &PIHash, path_char: *const libc::c_char) -> libc::uint64_t {
+pub extern "C" fn ext_get_phash(lib: &PIHash, path_char: *const libc::c_char) -> u64 {
     unsafe {
         let path_str = CStr::from_ptr(path_char);
         let image_path = match path_str.to_str() {
@@ -184,9 +184,9 @@ pub extern "C" fn ext_get_phash(lib: &PIHash, path_char: *const libc::c_char) ->
 
 #[repr(C)]
 pub struct PIHashes {
-    ahash: libc::uint64_t,
-    dhash: libc::uint64_t,
-    phash: libc::uint64_t,
+    ahash: u64,
+    dhash: u64,
+    phash: u64,
 }
 
 #[no_mangle]

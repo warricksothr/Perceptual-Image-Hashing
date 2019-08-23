@@ -14,7 +14,7 @@ use super::image::Pixel;
 use super::prepare_image;
 use super::{HashType, PerceptualHash, Precision, PreparedImage};
 
-use self::image::{DynamicImage, GenericImage, GenericImageView};
+use self::image::{DynamicImage, GenericImageView};
 
 pub struct PHash<'a> {
     prepared_image: Box<PreparedImage<'a>>,

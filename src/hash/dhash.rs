@@ -11,7 +11,7 @@ use cache::Cache;
 use super::prepare_image;
 use super::{HashType, PerceptualHash, Precision, PreparedImage};
 
-use self::image::{GenericImage, GenericImageView};
+use self::image::GenericImageView;
 
 pub struct DHash<'a> {
     prepared_image: Box<PreparedImage<'a>>,

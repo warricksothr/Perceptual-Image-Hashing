@@ -175,7 +175,7 @@ impl<'a> Cache<'a> {
                     Ok(_) => {
                         let file_path = Path::new(&cache_path_str);
                         match File::create(file_path) {
-                            Ok(mut file) => {
+                            Ok(_) => {
                                 // Save the file into the cache
                                 match image.save(file_path) {
                                     Ok(_) => {}
