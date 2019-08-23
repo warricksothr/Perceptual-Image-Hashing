@@ -2,8 +2,6 @@
 //
 // Licensed under the MIT license<LICENSE-MIT or http://opensource.org/licenses/MIT>.
 // This file may not be copied, modified, or distributed except according to those terms.
-extern crate image;
-
 use std::path::Path;
 
 use cache::Cache;
@@ -11,7 +9,7 @@ use cache::Cache;
 use super::prepare_image;
 use super::{HashType, PerceptualHash, Precision, PreparedImage};
 
-use self::image::GenericImageView;
+use super::image::GenericImageView;
 
 pub struct DHash<'a> {
     prepared_image: Box<PreparedImage<'a>>,

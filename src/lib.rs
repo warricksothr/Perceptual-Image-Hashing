@@ -6,7 +6,6 @@
 // Enable nightly features for extra testing behind the bench feature
 #![cfg_attr(feature = "bench", feature(test))]
 
-extern crate image;
 extern crate libc;
 extern crate rustc_serialize;
 #[cfg(feature = "bench")]

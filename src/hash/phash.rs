@@ -2,19 +2,15 @@
 //
 // Licensed under the MIT license<LICENSE-MIT or http://opensource.org/licenses/MIT>.
 // This file may not be copied, modified, or distributed except according to those terms.
-extern crate image;
-
 use std::path::Path;
 
 use cache::Cache;
 
 use super::dft;
 use super::dft::Transform;
-use super::image::Pixel;
+use super::image::{DynamicImage, GenericImageView, Pixel};
 use super::prepare_image;
 use super::{HashType, PerceptualHash, Precision, PreparedImage};
-
-use self::image::{DynamicImage, GenericImageView};
 
 pub struct PHash<'a> {
     prepared_image: Box<PreparedImage<'a>>,
