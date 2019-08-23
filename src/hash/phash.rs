@@ -4,14 +4,17 @@
 // This file may not be copied, modified, or distributed except according to those terms.
 extern crate image;
 
-use cache::Cache;
-use self::image::{GenericImage, DynamicImage};
 use std::path::Path;
+
+use cache::Cache;
+
 use super::{HashType, PerceptualHash, Precision, PreparedImage};
 use super::dft;
 use super::dft::Transform;
 use super::image::Pixel;
 use super::prepare_image;
+
+use self::image::{DynamicImage, GenericImage, GenericImageView};
 
 pub struct PHash<'a> {
     prepared_image: Box<PreparedImage<'a>>,
@@ -37,8 +40,7 @@ impl<'a> PerceptualHash for PHash<'a> {
         match self.prepared_image.image {
             Some(ref image) => {
                 // Get the image data into a vector to perform the DFT on.
-                let width = image.width() as usize;
-                let height = image.height() as usize;
+                let (width, height) = image.dimensions();
 
                 // Get 2d data to 2d FFT/DFT
                 // Either from the cache or calculate it
@@ -98,13 +100,13 @@ impl<'a> PerceptualHash for PHash<'a> {
     }
 }
 
-fn create_data_matrix(width: usize,
-                      height: usize,
+fn create_data_matrix(width: u32,
+                      height: u32,
                       image: &DynamicImage)
                       -> Vec<Vec<f64>> {
     let mut data_matrix: Vec<Vec<f64>> = Vec::new();
     // Preparing the results
-    for x in 0..width {
+    for x in 0..width as usize {
         data_matrix.push(Vec::new());
         for y in 0..height {
             let pos_x = x as u32;

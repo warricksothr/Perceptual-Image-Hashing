@@ -4,11 +4,14 @@
 // This file may not be copied, modified, or distributed except according to those terms.
 extern crate image;
 
-use cache::Cache;
-use self::image::GenericImage;
 use std::path::Path;
+
+use cache::Cache;
+
 use super::{HashType, PerceptualHash, Precision, PreparedImage};
 use super::prepare_image;
+
+use self::image::{GenericImage, GenericImageView};
 
 pub struct DHash<'a> {
     prepared_image: Box<PreparedImage<'a>>,
@@ -35,18 +38,18 @@ impl<'a> PerceptualHash for DHash<'a> {
             Some(ref image) => {
                 let (_, _, first_pixel) = image.pixels().nth(0).unwrap();
                 let (_, _, last_pixel) = image.pixels().last().unwrap();
-                let first_pixel_value = first_pixel.data[0] as u64;
-                let last_pixel_value = last_pixel.data[0] as u64;
+                let first_pixel_value = first_pixel.0[0] as u64;
+                let last_pixel_value = last_pixel.0[0] as u64;
 
                 // Calculate the dhash
                 let mut previous_pixel_value = 0u64;
                 let mut hash = 0u64;
                 for (x, y, pixel) in image.pixels() {
                     if x == 0 && y == 0 {
-                        previous_pixel_value = pixel.data[0] as u64;
+                        previous_pixel_value = pixel.0[0] as u64;
                         continue;
                     }
-                    let pixel_val = pixel.data[0] as u64;
+                    let pixel_val = pixel.0[0] as u64;
                     if pixel_val >= previous_pixel_value {
                         hash |= 1;
                     } else {

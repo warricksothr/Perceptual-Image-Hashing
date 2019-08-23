@@ -167,10 +167,11 @@ impl<'a> Cache<'a> {
                 // println!("Saving: {}", cache_path_str);
                 match create_dir_all(cache_dir_str) {
                     Ok(_) => {
-                        match File::create(Path::new(&cache_path_str)) {
+                        let file_path = Path::new(&cache_path_str);
+                        match File::create(file_path) {
                             Ok(mut file) => {
                                 // Save the file into the cache
-                                match image.save(&mut file, image::ImageFormat::PNG) {
+                                match image.save(file_path) {
                                     Ok(_) => {}
                                     Err(e) => {
                                         println!("Error: {}", e);
@@ -364,7 +365,7 @@ fn test_get_file_hash() {
     match hash {
         Ok(v) => {
             println!("Hash: {}", v);
-            assert!(v == "4beb6f2d852b75a313863916a1803ebad13a3196");
+            assert_eq!(v, String::from("4beb6f2d852b75a313863916a1803ebad13a3196"));
         }
         Err(e) => {
             println!("Error: {:?}", e);
