@@ -6,11 +6,11 @@
 extern crate dft;
 extern crate image;
 
-use cache::Cache;
 use self::image::FilterType;
+use cache::Cache;
 use std::f64;
-use std::path::Path;
 use std::fmt;
+use std::path::Path;
 
 mod ahash;
 mod dhash;
@@ -59,13 +59,14 @@ pub struct PerceptualHashes<'a> {
 
 impl<'a> PerceptualHashes<'a> {
     pub fn similar(&self, other: &'a PerceptualHashes<'a>) -> bool {
-        if self.orig_path != other.orig_path &&
-            calculate_hamming_distance(self.ahash, other.ahash) <=
-                HAMMING_DISTANCE_SIMILARITY_LIMIT &&
-            calculate_hamming_distance(self.dhash, other.dhash) <=
-                HAMMING_DISTANCE_SIMILARITY_LIMIT &&
-            calculate_hamming_distance(self.phash, other.phash) <=
-                HAMMING_DISTANCE_SIMILARITY_LIMIT {
+        if self.orig_path != other.orig_path
+            && calculate_hamming_distance(self.ahash, other.ahash)
+                <= HAMMING_DISTANCE_SIMILARITY_LIMIT
+            && calculate_hamming_distance(self.dhash, other.dhash)
+                <= HAMMING_DISTANCE_SIMILARITY_LIMIT
+            && calculate_hamming_distance(self.phash, other.phash)
+                <= HAMMING_DISTANCE_SIMILARITY_LIMIT
+        {
             true
         } else {
             false
@@ -113,7 +114,7 @@ impl fmt::Display for HashType {
         match *self {
             HashType::AHash => write!(f, "AHash"),
             HashType::DHash => write!(f, "DHash"),
-            HashType::PHash => write!(f, "PHash")
+            HashType::PHash => write!(f, "PHash"),
         }
     }
 }
@@ -140,11 +141,12 @@ pub trait PerceptualHash {
  * A PreparedImage struct with the required information for performing hashing
  *
  */
-pub fn prepare_image<'a>(path: &'a Path,
-                         hash_type: &HashType,
-                         precision: &Precision,
-                         cache: &Option<Cache>)
-                         -> PreparedImage<'a> {
+pub fn prepare_image<'a>(
+    path: &'a Path,
+    hash_type: &HashType,
+    precision: &Precision,
+    cache: &Option<Cache>,
+) -> PreparedImage<'a> {
     let image_path = path.to_str().unwrap();
     let size: u32 = match *hash_type {
         HashType::PHash => precision.get_size() * 4,
@@ -154,12 +156,10 @@ pub fn prepare_image<'a>(path: &'a Path,
     match *cache {
         Some(ref c) => {
             match c.get_image_from_cache(&path, size) {
-                Some(image) => {
-                    PreparedImage {
-                        orig_path: &*image_path,
-                        image: Some(image),
-                    }
-                }
+                Some(image) => PreparedImage {
+                    orig_path: &*image_path,
+                    image: Some(image),
+                },
                 None => {
                     let processed_image = process_image(&image_path, size);
                     // Oh, and save it in a cache
@@ -205,11 +205,12 @@ fn process_image<'a>(image_path: &'a str, size: u32) -> PreparedImage<'a> {
 /**
  * Get a specific HashType hash
  */
-pub fn get_perceptual_hash<'a>(path: &'a Path,
-                               precision: &Precision,
-                               hash_type: &HashType,
-                               cache: &Option<Cache>)
-                               -> u64 {
+pub fn get_perceptual_hash<'a>(
+    path: &'a Path,
+    precision: &Precision,
+    hash_type: &HashType,
+    cache: &Option<Cache>,
+) -> u64 {
     match *hash_type {
         HashType::AHash => ahash::AHash::new(&path, &precision, &cache).get_hash(&cache),
         HashType::DHash => dhash::DHash::new(&path, &precision, &cache).get_hash(&cache),
@@ -220,10 +221,11 @@ pub fn get_perceptual_hash<'a>(path: &'a Path,
 /**
  * Get all perceptual hashes for an image
  */
-pub fn get_perceptual_hashes<'a>(path: &'a Path,
-                                 precision: &Precision,
-                                 cache: &Option<Cache>)
-                                 -> PerceptualHashes<'a> {
+pub fn get_perceptual_hashes<'a>(
+    path: &'a Path,
+    precision: &Precision,
+    cache: &Option<Cache>,
+) -> PerceptualHashes<'a> {
     let image_path = path.to_str().unwrap();
     let ahash = ahash::AHash::new(&path, &precision, &cache).get_hash(&cache);
     let dhash = dhash::DHash::new(&path, &precision, &cache).get_hash(&cache);

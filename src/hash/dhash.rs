@@ -8,8 +8,8 @@ use std::path::Path;
 
 use cache::Cache;
 
-use super::{HashType, PerceptualHash, Precision, PreparedImage};
 use super::prepare_image;
+use super::{HashType, PerceptualHash, Precision, PreparedImage};
 
 use self::image::{GenericImage, GenericImageView};
 

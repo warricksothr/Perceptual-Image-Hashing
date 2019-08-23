@@ -8,11 +8,11 @@ use std::path::Path;
 
 use cache::Cache;
 
-use super::{HashType, PerceptualHash, Precision, PreparedImage};
 use super::dft;
 use super::dft::Transform;
 use super::image::Pixel;
 use super::prepare_image;
+use super::{HashType, PerceptualHash, Precision, PreparedImage};
 
 use self::image::{DynamicImage, GenericImage, GenericImageView};
 
@@ -48,14 +48,18 @@ impl<'a> PerceptualHash for PHash<'a> {
                 // Atleast compared to opening and processing the images
                 let data_matrix: Vec<Vec<f64>> = match *cache {
                     Some(ref c) => {
-                        match c.get_matrix_from_cache(&Path::new(self.prepared_image.orig_path),
-                                                      width as u32) {
+                        match c.get_matrix_from_cache(
+                            &Path::new(self.prepared_image.orig_path),
+                            width as u32,
+                        ) {
                             Some(matrix) => matrix,
                             None => {
                                 let matrix = create_data_matrix(width, height, &image);
-                                match c.put_matrix_in_cache(&Path::new(self.prepared_image.orig_path),
-                                                            width as u32,
-                                                            &matrix) {
+                                match c.put_matrix_in_cache(
+                                    &Path::new(self.prepared_image.orig_path),
+                                    width as u32,
+                                    &matrix,
+                                ) {
                                     Ok(_) => {}
                                     Err(e) => println!("Unable to store matrix in cache. {}", e),
                                 };
@@ -100,10 +104,7 @@ impl<'a> PerceptualHash for PHash<'a> {
     }
 }
 
-fn create_data_matrix(width: u32,
-                      height: u32,
-                      image: &DynamicImage)
-                      -> Vec<Vec<f64>> {
+fn create_data_matrix(width: u32, height: u32, image: &DynamicImage) -> Vec<Vec<f64>> {
     let mut data_matrix: Vec<Vec<f64>> = Vec::new();
     // Preparing the results
     for x in 0..width as usize {

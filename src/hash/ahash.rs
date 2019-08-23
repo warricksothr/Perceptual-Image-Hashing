@@ -9,8 +9,8 @@ use std::path::Path;
 
 use cache::Cache;
 
-use super::{HashType, PerceptualHash, Precision, PreparedImage};
 use super::prepare_image;
+use super::{HashType, PerceptualHash, Precision, PreparedImage};
 
 use self::image::{GenericImage, GenericImageView};
 
@@ -28,12 +28,12 @@ impl<'a> AHash<'a> {
 
 impl<'a> PerceptualHash for AHash<'a> {
     /**
-    * Calculate the ahash of the provided prepared image.
-    *
-    * # Returns
-    *
-    * A u64 representing the value of the hash
-    */
+     * Calculate the ahash of the provided prepared image.
+     *
+     * # Returns
+     *
+     * A u64 representing the value of the hash
+     */
     fn get_hash(&self, _: &Option<Cache>) -> u64 {
         match self.prepared_image.image {
             Some(ref image) => {
@@ -52,7 +52,7 @@ impl<'a> PerceptualHash for AHash<'a> {
                 for (_, _, pixel) in image.pixels() {
                     if pixel.0[0] as u64 >= mean {
                         hash |= 1;
-                        // println!("Pixel {} is >= {} therefore {:b}", pixel_sum, mean, hash);
+                    // println!("Pixel {} is >= {} therefore {:b}", pixel_sum, mean, hash);
                     } else {
                         hash |= 0;
                         // println!("Pixel {} is < {} therefore {:b}", pixel_sum, mean, hash);
