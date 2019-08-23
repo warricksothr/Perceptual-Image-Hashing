@@ -257,6 +257,7 @@ mod tests {
     ) {
         let mut hashes: [u64; 3] = [0; 3];
         for index in 0..image_paths.len() {
+//            println!("{}, {:?}", index, image_paths[index]);
             let image_path = image_paths[index];
             let calculated_hash = lib.get_perceptual_hash(&image_path, &hash_precision, &hash_type);
             println!(
@@ -291,6 +292,7 @@ mod tests {
     fn test_confirm_ahash_results() {
         // Prep_library
         let lib = PIHash::new(Some(cache::DEFAULT_CACHE_DIR));
+        let no_cache_lib = PIHash::new(None);
 
         // Sample_01 tests
         let sample_01_images: [&Path; 3] = [
@@ -306,6 +308,14 @@ mod tests {
             sample_01_images,
             sample_01_hashes,
             &lib,
+        );
+        test_imageset_hash(
+            hash::HashType::AHash,
+            hash::Precision::Medium,
+            0u64,
+            sample_01_images,
+            sample_01_hashes,
+            &no_cache_lib,
         );
 
         // Sample_02 tests
@@ -327,6 +337,14 @@ mod tests {
             sample_02_hashes,
             &lib,
         );
+        test_imageset_hash(
+            hash::HashType::AHash,
+            hash::Precision::Medium,
+            0u64,
+            sample_02_images,
+            sample_02_hashes,
+            &no_cache_lib,
+        );
 
         // Sample_03 tests
         let sample_03_images: [&Path; 3] = [
@@ -343,6 +361,14 @@ mod tests {
             sample_03_images,
             sample_03_hashes,
             &lib,
+        );
+        test_imageset_hash(
+            hash::HashType::AHash,
+            hash::Precision::Medium,
+            0u64,
+            sample_03_images,
+            sample_03_hashes,
+            &no_cache_lib,
         );
 
         // Sample_04 tests
@@ -364,6 +390,14 @@ mod tests {
             sample_04_hashes,
             &lib,
         );
+        test_imageset_hash(
+            hash::HashType::AHash,
+            hash::Precision::Medium,
+            0u64,
+            sample_04_images,
+            sample_04_hashes,
+            &no_cache_lib,
+        );
 
         // Clean_Cache
         // super::teardown();
@@ -373,6 +407,7 @@ mod tests {
     fn test_confirm_dhash_results() {
         // Prep_library
         let lib = PIHash::new(Some(cache::DEFAULT_CACHE_DIR));
+        let no_cache_lib = PIHash::new(None);
 
         // Sample_01 tests
         let sample_01_images: [&Path; 3] = [
@@ -393,6 +428,14 @@ mod tests {
             sample_01_hashes,
             &lib,
         );
+        test_imageset_hash(
+            hash::HashType::DHash,
+            hash::Precision::Medium,
+            0u64,
+            sample_01_images,
+            sample_01_hashes,
+            &no_cache_lib,
+        );
 
         // Sample_02 tests
         let sample_02_images: [&Path; 3] = [
@@ -413,6 +456,14 @@ mod tests {
             sample_02_hashes,
             &lib,
         );
+        test_imageset_hash(
+            hash::HashType::DHash,
+            hash::Precision::Medium,
+            0u64,
+            sample_02_images,
+            sample_02_hashes,
+            &no_cache_lib,
+        );
 
         // Sample_03 tests
         let sample_03_images: [&Path; 3] = [
@@ -429,6 +480,14 @@ mod tests {
             sample_03_images,
             sample_03_hashes,
             &lib,
+        );
+        test_imageset_hash(
+            hash::HashType::DHash,
+            hash::Precision::Medium,
+            0u64,
+            sample_03_images,
+            sample_03_hashes,
+            &no_cache_lib,
         );
 
         // Sample_04 tests
@@ -450,6 +509,14 @@ mod tests {
             sample_04_hashes,
             &lib,
         );
+        test_imageset_hash(
+            hash::HashType::DHash,
+            hash::Precision::Medium,
+            0u64,
+            sample_04_images,
+            sample_04_hashes,
+            &no_cache_lib,
+        );
 
         // Clean_Cache
         // super::teardown();
@@ -459,6 +526,7 @@ mod tests {
     fn test_confirm_phash_results() {
         // Prep_library
         let lib = PIHash::new(Some(cache::DEFAULT_CACHE_DIR));
+        let no_cache_lib = PIHash::new(None);
 
         // Sample_01 tests
         let sample_01_images: [&Path; 3] = [
@@ -474,6 +542,14 @@ mod tests {
             sample_01_images,
             sample_01_hashes,
             &lib,
+        );
+        test_imageset_hash(
+            hash::HashType::PHash,
+            hash::Precision::Medium,
+            0u64,
+            sample_01_images,
+            sample_01_hashes,
+            &no_cache_lib,
         );
 
         // Sample_02 tests
@@ -494,6 +570,14 @@ mod tests {
             sample_02_images,
             sample_02_hashes,
             &lib,
+        );
+        test_imageset_hash(
+            hash::HashType::PHash,
+            hash::Precision::Medium,
+            0u64,
+            sample_02_images,
+            sample_02_hashes,
+            &no_cache_lib,
         );
 
         // Sample_03 tests
@@ -515,6 +599,14 @@ mod tests {
             sample_03_hashes,
             &lib,
         );
+        test_imageset_hash(
+            hash::HashType::PHash,
+            hash::Precision::Medium,
+            0u64,
+            sample_03_images,
+            sample_03_hashes,
+            &no_cache_lib,
+        );
 
         // Sample_04 tests
         let sample_04_images: [&Path; 3] = [
@@ -534,6 +626,14 @@ mod tests {
             sample_04_images,
             sample_04_hashes,
             &lib,
+        );
+        test_imageset_hash(
+            hash::HashType::PHash,
+            hash::Precision::Medium,
+            0u64,
+            sample_04_images,
+            sample_04_hashes,
+            &no_cache_lib,
         );
 
         // Clean_Cache
