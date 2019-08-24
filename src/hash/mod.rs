@@ -83,7 +83,6 @@ impl PerceptualHashes {
  * Medium aims for 64 bit precision
  * High aims for 128 bit precision
  */
-#[allow(dead_code)]
 #[derive(Copy, Clone)]
 pub enum Precision {
     Low,
