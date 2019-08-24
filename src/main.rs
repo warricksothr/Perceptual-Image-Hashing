@@ -32,6 +32,7 @@ Options:
     -a, --ahash     Include an ahash calculation.
     -d, --dhash     Include an dhash calculation.
     -p, --phash     Include an phash calculation.
+    -n, --nocache  Disable caching behavior.
 ";
 
 #[derive(Debug, Deserialize)]
@@ -42,6 +43,7 @@ struct Args {
     flag_phash: bool,
     arg_path: String,
     arg_comparison: Vec<String>,
+    flag_nocache: bool,
 }
 
 fn main() {
@@ -55,8 +57,14 @@ fn main() {
         std::process::exit(0);
     }
 
+    let cache = if args.flag_nocache {
+        None
+    } else {
+        Some(pihash::cache::DEFAULT_CACHE_DIR)
+    };
+
     // Init the hashing library
-    let lib = pihash::PIHash::new(Some(pihash::cache::DEFAULT_CACHE_DIR));
+    let lib = pihash::PIHash::new(cache);
 
     // println!("{:?}", args);
     if args.arg_comparison.len() > 0 {
@@ -72,10 +80,10 @@ fn main() {
             ));
         }
 
-        let mut similar_images: Vec<&str> = Vec::new();
+        let mut similar_images: Vec<String> = Vec::new();
         for comparison_hash in comparison_hashes {
             if base_hash.similar(&comparison_hash) {
-                similar_images.push(&comparison_hash.orig_path);
+                similar_images.push(String::from(&comparison_hash.orig_path));
             }
         }
 
@@ -106,11 +114,11 @@ fn flags_get_all_perceptual_hashes(args: &Args) -> bool {
         || (!args.flag_ahash && !args.flag_dhash && !args.flag_phash)
 }
 
-fn get_requested_perceptual_hashes<'a>(
+fn get_requested_perceptual_hashes(
     lib: &pihash::PIHash,
-    image_path: &'a Path,
+    image_path: &Path,
     args: &Args,
-) -> pihash::hash::PerceptualHashes<'a> {
+) -> pihash::hash::PerceptualHashes {
     let ahash = if args.flag_ahash || flags_get_all_perceptual_hashes(&args) {
         lib.get_ahash(&image_path)
     } else {
@@ -130,7 +138,7 @@ fn get_requested_perceptual_hashes<'a>(
     };
 
     pihash::hash::PerceptualHashes {
-        orig_path: image_path.to_str().unwrap(),
+        orig_path: String::from(image_path.to_str().unwrap()),
         ahash: ahash,
         dhash: dhash,
         phash: phash,

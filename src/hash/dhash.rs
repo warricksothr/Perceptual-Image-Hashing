@@ -11,19 +11,19 @@ use super::{HashType, PerceptualHash, Precision, PreparedImage};
 
 use super::image::GenericImageView;
 
-pub struct DHash<'a> {
-    prepared_image: Box<PreparedImage<'a>>,
+pub struct DHash {
+    prepared_image: Box<PreparedImage>,
 }
 
-impl<'a> DHash<'a> {
-    pub fn new(path: &'a Path, precision: &Precision, cache: &Option<Cache>) -> Self {
+impl DHash {
+    pub fn new(path: &Path, precision: &Precision, cache: &Option<Cache>) -> Self {
         DHash {
             prepared_image: Box::new(prepare_image(&path, &HashType::DHash, &precision, cache)),
         }
     }
 }
 
-impl<'a> PerceptualHash for DHash<'a> {
+impl PerceptualHash for DHash {
     /**
      * Calculate the dhash of the provided prepared image
      *

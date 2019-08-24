@@ -58,26 +58,26 @@ impl PartialEq<CacheMetadata> for CacheMetadata {
 * Structure to hold implementation of the cache
 */
 #[repr(C)]
-pub struct Cache<'a> {
-    pub cache_dir: &'a str,
+pub struct Cache {
+    pub cache_dir: String,
     pub use_cache: bool,
 }
 
-impl<'a> Default for Cache<'a> {
-    fn default() -> Cache<'a> {
+impl Default for Cache {
+    fn default() -> Cache {
         Cache {
-            cache_dir: DEFAULT_CACHE_DIR,
+            cache_dir: String::from(DEFAULT_CACHE_DIR),
             use_cache: true,
         }
     }
 }
 
-impl<'a> Cache<'a> {
+impl Cache {
     /**
      * Create the required directories for the cache
      */
     pub fn init(&self) -> Result<(), Error> {
-        match create_dir_all(self.cache_dir) {
+        match create_dir_all(&self.cache_dir) {
             Ok(_) => {
                 let metadata_path_str = format!("{}/{}", self.cache_dir, CACHE_METADATA_FILE);
                 let metadata_path = Path::new(&metadata_path_str);
@@ -97,8 +97,8 @@ impl<'a> Cache<'a> {
                                 // If they match, continue
                                 if current_metadata != loaded_metadata {
                                     // If they don't wipe the cache to start new
-                                    match remove_dir_all(self.cache_dir) {
-                                        Ok(_) => match create_dir_all(self.cache_dir) {
+                                    match remove_dir_all(&self.cache_dir) {
+                                        Ok(_) => match create_dir_all(&self.cache_dir) {
                                             Ok(_) => (),
                                             Err(e) => println!("Error: {}", e),
                                         },
@@ -130,7 +130,7 @@ impl<'a> Cache<'a> {
      * Clean the cache directory completely
      */
     pub fn clean(&self) -> Result<(), Error> {
-        remove_dir_all(self.cache_dir)
+        remove_dir_all(&self.cache_dir)
     }
 
     /**
@@ -170,8 +170,11 @@ impl<'a> Cache<'a> {
                 );
                 let cache_dir_str =
                     format!("{}/image/{}x{}/{}", self.cache_dir, size, size, &sha1[..10]);
-                // println!("Saving: {}", cache_path_str);
-                match create_dir_all(cache_dir_str) {
+                println!("Test");
+                println!("{}", DEFAULT_CACHE_DIR);
+                println!("{}", &self.cache_dir);
+                //                println!("Saving: {}", &cache_path_str);
+                match create_dir_all(&cache_dir_str) {
                     Ok(_) => {
                         let file_path = Path::new(&cache_path_str);
                         match File::create(file_path) {
@@ -185,10 +188,16 @@ impl<'a> Cache<'a> {
                                     }
                                 }
                             }
-                            Err(e) => return Err(e),
+                            Err(e) => {
+                                println!("Unable to create file {:?}", file_path);
+                                return Err(e);
+                            }
                         }
                     }
-                    Err(e) => return Err(e),
+                    Err(e) => {
+                        println!("Unable to create directory {:?}", &cache_dir_str);
+                        return Err(e);
+                    }
                 }
             }
             Err(e) => {

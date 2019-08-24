@@ -12,19 +12,19 @@ use super::image::{DynamicImage, GenericImageView, Pixel};
 use super::prepare_image;
 use super::{HashType, PerceptualHash, Precision, PreparedImage};
 
-pub struct PHash<'a> {
-    prepared_image: Box<PreparedImage<'a>>,
+pub struct PHash {
+    prepared_image: Box<PreparedImage>,
 }
 
-impl<'a> PHash<'a> {
-    pub fn new(path: &'a Path, precision: &Precision, cache: &Option<Cache>) -> Self {
+impl PHash {
+    pub fn new(path: &Path, precision: &Precision, cache: &Option<Cache>) -> Self {
         PHash {
             prepared_image: Box::new(prepare_image(&path, &HashType::PHash, &precision, cache)),
         }
     }
 }
 
-impl<'a> PerceptualHash for PHash<'a> {
+impl PerceptualHash for PHash {
     /**
      * Calculate the phash of the provided prepared image
      *
@@ -45,14 +45,14 @@ impl<'a> PerceptualHash for PHash<'a> {
                 let data_matrix: Vec<Vec<f64>> = match *cache {
                     Some(ref c) => {
                         match c.get_matrix_from_cache(
-                            &Path::new(self.prepared_image.orig_path),
+                            &Path::new(&self.prepared_image.orig_path),
                             width as u32,
                         ) {
                             Some(matrix) => matrix,
                             None => {
                                 let matrix = create_data_matrix(width, height, &image);
                                 match c.put_matrix_in_cache(
-                                    &Path::new(self.prepared_image.orig_path),
+                                    &Path::new(&self.prepared_image.orig_path),
                                     width as u32,
                                     &matrix,
                                 ) {

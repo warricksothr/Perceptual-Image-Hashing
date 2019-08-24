@@ -51,6 +51,7 @@ class PIHashes(Structure):
 # Setting the ctypes return type references for the foreign functions
 # returns a pointer to the library that we'll need to pass to all function calls
 lib.ext_init.restype = c_void_p
+lib.ext_init.argtypes = [c_char_p]
 # Returns a longlong hash, takes a pointer and a string
 lib.ext_get_ahash.restype = c_ulonglong
 lib.ext_get_ahash.argtypes = [c_void_p, c_char_p]
@@ -65,7 +66,7 @@ lib.ext_free_phashes.argtypes = [c_void_p]
 lib.ext_free.argtypes = [c_void_p]
 
 #initialize the library
-lib_struct = lib.ext_init("./.hash_cache".encode(encoding="utf-8"))
+lib_struct = lib.ext_init("./.hash_cache".encode('utf-8'))
 
 #print("Pointer to lib_struct: ", lib_struct)
 

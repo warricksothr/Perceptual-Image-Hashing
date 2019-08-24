@@ -20,20 +20,20 @@ pub mod cache;
 pub mod hash;
 
 #[repr(C)]
-pub struct PIHash<'a> {
-    cache: Option<Cache<'a>>,
+pub struct PIHash {
+    cache: Option<Cache>,
 }
 
-impl<'a> PIHash<'a> {
+impl PIHash {
     /**
      * Create a new pihash library, and initialize a cache of a path is passed.
      * If none is passed then no cache is initialized or used with the library
      */
-    pub fn new(cache_path: Option<&'a str>) -> PIHash<'a> {
+    pub fn new(cache_path: Option<&str>) -> PIHash {
         match cache_path {
             Some(path) => {
                 let cache = Cache {
-                    cache_dir: path,
+                    cache_dir: String::from(path),
                     use_cache: true,
                 };
                 match cache.init() {
@@ -57,7 +57,7 @@ impl<'a> PIHash<'a> {
         hash::get_perceptual_hash(&path, &precision, &hash_type, &self.cache)
     }
 
-    pub fn get_phashes(&self, path: &'a Path) -> hash::PerceptualHashes {
+    pub fn get_phashes(&self, path: &Path) -> hash::PerceptualHashes {
         hash::get_perceptual_hashes(&path, &hash::Precision::Medium, &self.cache)
     }
 
@@ -218,6 +218,9 @@ mod tests {
     use super::test::Bencher;
     use super::PIHash;
 
+    thread_local!(static LIB: PIHash = PIHash::new(Some(cache::DEFAULT_CACHE_DIR)));
+    thread_local!(static NO_CACHE_LIB: PIHash = PIHash::new(None));
+
     #[test]
     fn test_can_get_test_images() {
         let paths = fs::read_dir(&Path::new("./test_images")).unwrap();
@@ -257,7 +260,7 @@ mod tests {
     ) {
         let mut hashes: [u64; 3] = [0; 3];
         for index in 0..image_paths.len() {
-//            println!("{}, {:?}", index, image_paths[index]);
+            //            println!("{}, {:?}", index, image_paths[index]);
             let image_path = image_paths[index];
             let calculated_hash = lib.get_perceptual_hash(&image_path, &hash_precision, &hash_type);
             println!(
@@ -288,37 +291,57 @@ mod tests {
         }
     }
 
-    #[test]
-    fn test_confirm_ahash_results() {
-        // Prep_library
-        let lib = PIHash::new(Some(cache::DEFAULT_CACHE_DIR));
-        let no_cache_lib = PIHash::new(None);
+    /**
+     * Test image set with and without caching
+     */
+    fn test_image_set(
+        hash_type: hash::HashType,
+        hash_precision: hash::Precision,
+        max_hamming_distance: u64,
+        image_paths: [&Path; 3],
+        image_hashes: [u64; 3],
+    ) {
+        LIB.with(|lib| {
+            test_imageset_hash(
+                hash_type,
+                hash_precision,
+                max_hamming_distance,
+                image_paths,
+                image_hashes,
+                lib,
+            );
+        });
+        NO_CACHE_LIB.with(|lib| {
+            test_imageset_hash(
+                hash_type,
+                hash_precision,
+                max_hamming_distance,
+                image_paths,
+                image_hashes,
+                lib,
+            );
+        });
+    }
 
-        // Sample_01 tests
+    #[test]
+    fn test_confirm_ahash_results_sample_01() {
         let sample_01_images: [&Path; 3] = [
             &Path::new("./test_images/sample_01_large.jpg"),
             &Path::new("./test_images/sample_01_medium.jpg"),
             &Path::new("./test_images/sample_01_small.jpg"),
         ];
         let sample_01_hashes: [u64; 3] = [857051991849750, 857051991849750, 857051991849750];
-        test_imageset_hash(
+        test_image_set(
             hash::HashType::AHash,
             hash::Precision::Medium,
             0u64,
             sample_01_images,
             sample_01_hashes,
-            &lib,
         );
-        test_imageset_hash(
-            hash::HashType::AHash,
-            hash::Precision::Medium,
-            0u64,
-            sample_01_images,
-            sample_01_hashes,
-            &no_cache_lib,
-        );
+    }
 
-        // Sample_02 tests
+    #[test]
+    fn test_confirm_ahash_results_sample_02() {
         let sample_02_images: [&Path; 3] = [
             &Path::new("./test_images/sample_02_large.jpg"),
             &Path::new("./test_images/sample_02_medium.jpg"),
@@ -329,24 +352,17 @@ mod tests {
             18446744073441116160,
             18446744073441116160,
         ];
-        test_imageset_hash(
+        test_image_set(
             hash::HashType::AHash,
             hash::Precision::Medium,
             0u64,
             sample_02_images,
             sample_02_hashes,
-            &lib,
         );
-        test_imageset_hash(
-            hash::HashType::AHash,
-            hash::Precision::Medium,
-            0u64,
-            sample_02_images,
-            sample_02_hashes,
-            &no_cache_lib,
-        );
+    }
 
-        // Sample_03 tests
+    #[test]
+    fn test_confirm_ahash_results_sample_03() {
         let sample_03_images: [&Path; 3] = [
             &Path::new("./test_images/sample_03_large.jpg"),
             &Path::new("./test_images/sample_03_medium.jpg"),
@@ -354,24 +370,17 @@ mod tests {
         ];
         let sample_03_hashes: [u64; 3] =
             [135670932300497406, 135670932300497406, 135670932300497406];
-        test_imageset_hash(
+        test_image_set(
             hash::HashType::AHash,
             hash::Precision::Medium,
             0u64,
             sample_03_images,
             sample_03_hashes,
-            &lib,
         );
-        test_imageset_hash(
-            hash::HashType::AHash,
-            hash::Precision::Medium,
-            0u64,
-            sample_03_images,
-            sample_03_hashes,
-            &no_cache_lib,
-        );
+    }
 
-        // Sample_04 tests
+    #[test]
+    fn test_confirm_ahash_results_sample_04() {
         let sample_04_images: [&Path; 3] = [
             &Path::new("./test_images/sample_04_large.jpg"),
             &Path::new("./test_images/sample_04_medium.jpg"),
@@ -382,34 +391,20 @@ mod tests {
             18446460933225054208,
             18446460933225054208,
         ];
-        test_imageset_hash(
-            hash::HashType::AHash,
-            hash::Precision::Medium,
-            0u64,
-            sample_04_images,
-            sample_04_hashes,
-            &lib,
-        );
-        test_imageset_hash(
-            hash::HashType::AHash,
-            hash::Precision::Medium,
-            0u64,
-            sample_04_images,
-            sample_04_hashes,
-            &no_cache_lib,
-        );
-
-        // Clean_Cache
-        // super::teardown();
+        LIB.with(|lib| {
+            test_imageset_hash(
+                hash::HashType::AHash,
+                hash::Precision::Medium,
+                0u64,
+                sample_04_images,
+                sample_04_hashes,
+                lib,
+            );
+        });
     }
 
     #[test]
-    fn test_confirm_dhash_results() {
-        // Prep_library
-        let lib = PIHash::new(Some(cache::DEFAULT_CACHE_DIR));
-        let no_cache_lib = PIHash::new(None);
-
-        // Sample_01 tests
+    fn test_confirm_dhash_results_sample_01() {
         let sample_01_images: [&Path; 3] = [
             &Path::new("./test_images/sample_01_large.jpg"),
             &Path::new("./test_images/sample_01_medium.jpg"),
@@ -420,24 +415,20 @@ mod tests {
             3404580580803739582,
             3404580580803739582,
         ];
-        test_imageset_hash(
-            hash::HashType::DHash,
-            hash::Precision::Medium,
-            0u64,
-            sample_01_images,
-            sample_01_hashes,
-            &lib,
-        );
-        test_imageset_hash(
-            hash::HashType::DHash,
-            hash::Precision::Medium,
-            0u64,
-            sample_01_images,
-            sample_01_hashes,
-            &no_cache_lib,
-        );
+        LIB.with(|lib| {
+            test_imageset_hash(
+                hash::HashType::DHash,
+                hash::Precision::Medium,
+                0u64,
+                sample_01_images,
+                sample_01_hashes,
+                lib,
+            );
+        });
+    }
 
-        // Sample_02 tests
+    #[test]
+    fn test_confirm_dhash_results_sample_02() {
         let sample_02_images: [&Path; 3] = [
             &Path::new("./test_images/sample_02_large.jpg"),
             &Path::new("./test_images/sample_02_medium.jpg"),
@@ -448,24 +439,20 @@ mod tests {
             14726771606135242753,
             14726771606135242753,
         ];
-        test_imageset_hash(
-            hash::HashType::DHash,
-            hash::Precision::Medium,
-            0u64,
-            sample_02_images,
-            sample_02_hashes,
-            &lib,
-        );
-        test_imageset_hash(
-            hash::HashType::DHash,
-            hash::Precision::Medium,
-            0u64,
-            sample_02_images,
-            sample_02_hashes,
-            &no_cache_lib,
-        );
+        LIB.with(|lib| {
+            test_imageset_hash(
+                hash::HashType::DHash,
+                hash::Precision::Medium,
+                0u64,
+                sample_02_images,
+                sample_02_hashes,
+                lib,
+            );
+        });
+    }
 
-        // Sample_03 tests
+    #[test]
+    fn test_confirm_dhash_results_sample_03() {
         let sample_03_images: [&Path; 3] = [
             &Path::new("./test_images/sample_03_large.jpg"),
             &Path::new("./test_images/sample_03_medium.jpg"),
@@ -473,24 +460,20 @@ mod tests {
         ];
         let sample_03_hashes: [u64; 3] =
             [144115181601817086, 144115181601817086, 144115181601817086];
-        test_imageset_hash(
-            hash::HashType::DHash,
-            hash::Precision::Medium,
-            0u64,
-            sample_03_images,
-            sample_03_hashes,
-            &lib,
-        );
-        test_imageset_hash(
-            hash::HashType::DHash,
-            hash::Precision::Medium,
-            0u64,
-            sample_03_images,
-            sample_03_hashes,
-            &no_cache_lib,
-        );
+        LIB.with(|lib| {
+            test_imageset_hash(
+                hash::HashType::DHash,
+                hash::Precision::Medium,
+                0u64,
+                sample_03_images,
+                sample_03_hashes,
+                lib,
+            );
+        });
+    }
 
-        // Sample_04 tests
+    #[test]
+    fn test_confirm_dhash_results_sample_04() {
         let sample_04_images: [&Path; 3] = [
             &Path::new("./test_images/sample_04_large.jpg"),
             &Path::new("./test_images/sample_04_medium.jpg"),
@@ -501,58 +484,37 @@ mod tests {
             18374262188442386433,
             18374262188442386433,
         ];
-        test_imageset_hash(
-            hash::HashType::DHash,
-            hash::Precision::Medium,
-            0u64,
-            sample_04_images,
-            sample_04_hashes,
-            &lib,
-        );
-        test_imageset_hash(
-            hash::HashType::DHash,
-            hash::Precision::Medium,
-            0u64,
-            sample_04_images,
-            sample_04_hashes,
-            &no_cache_lib,
-        );
-
-        // Clean_Cache
-        // super::teardown();
+        LIB.with(|lib| {
+            test_imageset_hash(
+                hash::HashType::DHash,
+                hash::Precision::Medium,
+                0u64,
+                sample_04_images,
+                sample_04_hashes,
+                lib,
+            );
+        });
     }
 
     #[test]
-    fn test_confirm_phash_results() {
-        // Prep_library
-        let lib = PIHash::new(Some(cache::DEFAULT_CACHE_DIR));
-        let no_cache_lib = PIHash::new(None);
-
-        // Sample_01 tests
+    fn test_confirm_phash_results_sample_01() {
         let sample_01_images: [&Path; 3] = [
             &Path::new("./test_images/sample_01_large.jpg"),
             &Path::new("./test_images/sample_01_medium.jpg"),
             &Path::new("./test_images/sample_01_small.jpg"),
         ];
         let sample_01_hashes: [u64; 3] = [72357778504597504, 72357778504597504, 72357778504597504];
-        test_imageset_hash(
+        test_image_set(
             hash::HashType::PHash,
             hash::Precision::Medium,
             0u64,
             sample_01_images,
             sample_01_hashes,
-            &lib,
         );
-        test_imageset_hash(
-            hash::HashType::PHash,
-            hash::Precision::Medium,
-            0u64,
-            sample_01_images,
-            sample_01_hashes,
-            &no_cache_lib,
-        );
+    }
 
-        // Sample_02 tests
+    #[test]
+    fn test_confirm_phash_results_sample_02() {
         let sample_02_images: [&Path; 3] = [
             &Path::new("./test_images/sample_02_large.jpg"),
             &Path::new("./test_images/sample_02_medium.jpg"),
@@ -563,24 +525,17 @@ mod tests {
             5332332327550844928,
             5332332327550844928,
         ];
-        test_imageset_hash(
+        test_image_set(
             hash::HashType::PHash,
             hash::Precision::Medium,
             0u64,
             sample_02_images,
             sample_02_hashes,
-            &lib,
         );
-        test_imageset_hash(
-            hash::HashType::PHash,
-            hash::Precision::Medium,
-            0u64,
-            sample_02_images,
-            sample_02_hashes,
-            &no_cache_lib,
-        );
+    }
 
-        // Sample_03 tests
+    #[test]
+    fn test_confirm_phash_results_sample_03() {
         let sample_03_images: [&Path; 3] = [
             &Path::new("./test_images/sample_03_large.jpg"),
             &Path::new("./test_images/sample_03_medium.jpg"),
@@ -591,24 +546,17 @@ mod tests {
             6917529027641081856,
             6917529027641081856,
         ];
-        test_imageset_hash(
+        test_image_set(
             hash::HashType::PHash,
             hash::Precision::Medium,
             0u64,
             sample_03_images,
             sample_03_hashes,
-            &lib,
         );
-        test_imageset_hash(
-            hash::HashType::PHash,
-            hash::Precision::Medium,
-            0u64,
-            sample_03_images,
-            sample_03_hashes,
-            &no_cache_lib,
-        );
+    }
 
-        // Sample_04 tests
+    #[test]
+    fn test_confirm_phash_results_sample_04() {
         let sample_04_images: [&Path; 3] = [
             &Path::new("./test_images/sample_04_large.jpg"),
             &Path::new("./test_images/sample_04_medium.jpg"),
@@ -619,25 +567,13 @@ mod tests {
             10997931646002397184,
             10997931646002397184,
         ];
-        test_imageset_hash(
+        test_image_set(
             hash::HashType::PHash,
             hash::Precision::Medium,
             0u64,
             sample_04_images,
             sample_04_hashes,
-            &lib,
         );
-        test_imageset_hash(
-            hash::HashType::PHash,
-            hash::Precision::Medium,
-            0u64,
-            sample_04_images,
-            sample_04_hashes,
-            &no_cache_lib,
-        );
-
-        // Clean_Cache
-        // super::teardown();
     }
 
     #[cfg(feature = "bench")]
@@ -655,7 +591,6 @@ mod tests {
         );
 
         bench.iter(|| {
-            // Sample_01 Bench
             lib.get_perceptual_hash(
                 &Path::new("./test_images/sample_01_large.jpg"),
                 &hash::Precision::Medium,
@@ -671,7 +606,6 @@ mod tests {
         let lib = PIHash::new(None);
 
         bench.iter(|| {
-            // Sample_01 Bench
             lib.get_perceptual_hash(
                 &Path::new("./test_images/sample_01_large.jpg"),
                 &hash::Precision::Medium,
