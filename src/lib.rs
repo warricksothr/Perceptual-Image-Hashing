@@ -8,6 +8,7 @@
 
 extern crate libc;
 extern crate rustc_serialize;
+extern crate serde;
 #[cfg(feature = "bench")]
 extern crate test;
 
@@ -57,7 +58,7 @@ impl PIHash {
         hash::get_perceptual_hash(&path, &precision, &hash_type, &self.cache)
     }
 
-    pub fn get_phashes(&self, path: &Path) -> hash::PerceptualHashes {
+    pub fn get_pihashes(&self, path: &Path) -> hash::PerceptualHashes {
         hash::get_perceptual_hashes(&path, &hash::Precision::Medium, &self.cache)
     }
 
@@ -159,24 +160,24 @@ pub struct PIHashes {
 }
 
 #[no_mangle]
-pub extern "C" fn ext_get_phashes(lib: &PIHash, path_char: *const libc::c_char) -> *mut PIHashes {
+pub extern "C" fn ext_get_pihashes(lib: &PIHash, path_char: *const libc::c_char) -> *mut PIHashes {
     unsafe {
         let path_str = CStr::from_ptr(path_char);
         let image_path = get_str_from_cstr(path_str);
         let path = Path::new(&image_path);
-        let phashes = lib.get_phashes(path);
+        let pihashes = lib.get_pihashes(path);
         Box::into_raw(Box::new(PIHashes {
-            ahash: phashes.ahash,
-            dhash: phashes.dhash,
-            phash: phashes.phash,
+            ahash: pihashes.ahash,
+            dhash: pihashes.dhash,
+            phash: pihashes.phash,
         }))
     }
 }
 
 #[no_mangle]
-pub extern "C" fn ext_free_phashes(raw_phashes: *const libc::c_void) {
+pub extern "C" fn ext_free_pihashes(raw_pihashes: *const libc::c_void) {
     unsafe {
-        drop(Box::from_raw(raw_phashes as *mut PIHashes));
+        drop(Box::from_raw(raw_pihashes as *mut PIHashes));
     }
 }
 
@@ -213,10 +214,11 @@ mod tests {
 
     use cache;
     use hash;
+    use hash::{PerceptualHash, PerceptualHashes};
 
+    use super::PIHash;
     #[cfg(feature = "bench")]
     use super::test::Bencher;
-    use super::PIHash;
 
     thread_local!(static LIB: PIHash = PIHash::new(Some(cache::DEFAULT_CACHE_DIR)));
     thread_local!(static NO_CACHE_LIB: PIHash = PIHash::new(None));
@@ -250,7 +252,7 @@ mod tests {
      * Updated test function. Assumes 3 images to a set and no hamming distances.
      * We don't need to confirm that the hamming distance calculation works in these tests.
      */
-    fn test_imageset_hash(
+    fn test_image_set_hash(
         hash_type: hash::HashType,
         hash_precision: hash::Precision,
         max_hamming_distance: u64,
@@ -302,7 +304,7 @@ mod tests {
         image_hashes: [u64; 3],
     ) {
         LIB.with(|lib| {
-            test_imageset_hash(
+            test_image_set_hash(
                 hash_type,
                 hash_precision,
                 max_hamming_distance,
@@ -312,12 +314,71 @@ mod tests {
             );
         });
         NO_CACHE_LIB.with(|lib| {
-            test_imageset_hash(
+            test_image_set_hash(
                 hash_type,
                 hash_precision,
                 max_hamming_distance,
                 image_paths,
                 image_hashes,
+                lib,
+            );
+        });
+    }
+
+    /**
+     * Updated test function. Assumes 3 images to a set and no hamming distances.
+     * We don't need to confirm that the hamming distance calculation works in these tests.
+     */
+    fn test_images_hashes(
+        image_hashes: &[PerceptualHashes],
+        lib: &PIHash,
+    ) {
+        let mut hashes = vec![];
+        for index in 0..image_hashes.len() {
+//            println!("{}, {:?}", index, image_paths[index]);
+            let image_path = Path::new(&image_hashes[index].orig_path);
+            let calculated_hash = lib.get_pihashes(&image_path);
+            println!(
+                "Image hashes expected: [{:?}] actual: [{:?}]",
+                image_hashes[index],
+                calculated_hash
+            );
+            hashes.push(calculated_hash);
+        }
+        for index in 0..image_hashes.len() {
+            assert_eq!(hashes[index], image_hashes[index]);
+        }
+//
+//        for index in 0..hashes.len() {
+//            for index2 in 0..hashes.len() {
+//                if index == index2 {
+//                    continue;
+//                } else {
+//                    let distance = hash::calculate_hamming_distance(hashes[index], hashes[index2]);
+//                    println!("Hashes [{}] and [{}] have a hamming distance of [{}] of a max allowed distance of [{}]",
+//                             hashes[index],
+//                             hashes[index2],
+//                             distance,
+//                             max_hamming_distance);
+//                    assert!(distance <= max_hamming_distance);
+//                }
+//            }
+//        }
+    }
+
+    /**
+     * Test images with and without caching
+     */
+    fn test_images(image_hashes: &[PerceptualHashes]) {
+        LIB.with(|lib| {
+            test_images_hashes(
+                &image_hashes,
+                lib,
+            );
+        });
+        NO_CACHE_LIB.with(|lib| {
+            test_images_hashes(
+                &image_hashes,
                 lib,
             );
         });
@@ -392,7 +453,7 @@ mod tests {
             18446460933225054208,
         ];
         LIB.with(|lib| {
-            test_imageset_hash(
+            test_image_set_hash(
                 hash::HashType::AHash,
                 hash::Precision::Medium,
                 0u64,
@@ -416,7 +477,7 @@ mod tests {
             3404580580803739582,
         ];
         LIB.with(|lib| {
-            test_imageset_hash(
+            test_image_set_hash(
                 hash::HashType::DHash,
                 hash::Precision::Medium,
                 0u64,
@@ -440,7 +501,7 @@ mod tests {
             14726771606135242753,
         ];
         LIB.with(|lib| {
-            test_imageset_hash(
+            test_image_set_hash(
                 hash::HashType::DHash,
                 hash::Precision::Medium,
                 0u64,
@@ -461,7 +522,7 @@ mod tests {
         let sample_03_hashes: [u64; 3] =
             [144115181601817086, 144115181601817086, 144115181601817086];
         LIB.with(|lib| {
-            test_imageset_hash(
+            test_image_set_hash(
                 hash::HashType::DHash,
                 hash::Precision::Medium,
                 0u64,
@@ -485,7 +546,7 @@ mod tests {
             18374262188442386433,
         ];
         LIB.with(|lib| {
-            test_imageset_hash(
+            test_image_set_hash(
                 hash::HashType::DHash,
                 hash::Precision::Medium,
                 0u64,
@@ -576,6 +637,37 @@ mod tests {
         );
     }
 
+    #[test]
+    fn test_confirm_pihash_results() {
+        let sample_hashes: [PerceptualHashes; 4] = [
+            PerceptualHashes {
+                orig_path: "./test_images/sample_01_large.jpg".to_string(),
+                ahash: 857051991849750,
+                dhash: 3404580580803739582,
+                phash: 72357778504597504,
+            },
+            PerceptualHashes {
+                orig_path: "./test_images/sample_02_large.jpg".to_string(),
+                ahash: 18446744073441116160,
+                dhash: 14726771606135242753,
+                phash: 5332332327550844928,
+            },
+            PerceptualHashes {
+                orig_path: "./test_images/sample_03_large.jpg".to_string(),
+                ahash: 135670932300497406,
+                dhash: 144115181601817086,
+                phash: 6917529027641081856,
+            },
+            PerceptualHashes {
+                orig_path: "./test_images/sample_04_large.jpg".to_string(),
+                ahash: 18446460933225054208,
+                dhash: 18374262188442386433,
+                phash: 10997931646002397184,
+            }
+        ];
+        test_images(&sample_hashes);
+    }
+
     #[cfg(feature = "bench")]
     #[bench]
     fn bench_with_cache(bench: &mut Bencher) -> () {
@@ -583,7 +675,7 @@ mod tests {
         let lib = PIHash::new(Some(cache::DEFAULT_CACHE_DIR));
 
         // Setup the caches to make sure we're good to properly bench
-        // All phashes so that the matricies are pulled from cache as well
+        // All pihashes so that the matrices are pulled from cache as well
         lib.get_perceptual_hash(
             &Path::new("./test_images/sample_01_large.jpg"),
             &hash::Precision::Medium,

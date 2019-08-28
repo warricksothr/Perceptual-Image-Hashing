@@ -8,7 +8,10 @@ extern crate image;
 
 use std::f64;
 use std::fmt;
+use std::fmt::{Error, Formatter};
 use std::path::Path;
+
+use serde::export::fmt::Debug;
 
 use cache::Cache;
 
@@ -52,22 +55,37 @@ pub struct PreparedImage {
 /**
  * Wraps the various perceptual hashes
  */
+#[derive(Debug)]
 pub struct PerceptualHashes {
     pub orig_path: String,
     pub ahash: u64,
     pub dhash: u64,
-    pub phash: u64,
+    pub phash: u64
+}
+
+impl PartialEq for PerceptualHashes {
+    fn eq(&self, other: &Self) -> bool {
+        return self.ahash == other.ahash
+            && self.dhash == other.dhash
+            && self.phash == other.phash;
+    }
+
+    fn ne(&self, other: &Self) -> bool {
+        return self.ahash != other.ahash
+            || self.dhash != other.dhash
+            || self.phash != other.phash;
+    }
 }
 
 impl PerceptualHashes {
     pub fn similar(&self, other: &PerceptualHashes) -> bool {
         if self.orig_path != other.orig_path
             && calculate_hamming_distance(self.ahash, other.ahash)
-                <= HAMMING_DISTANCE_SIMILARITY_LIMIT
+            <= HAMMING_DISTANCE_SIMILARITY_LIMIT
             && calculate_hamming_distance(self.dhash, other.dhash)
-                <= HAMMING_DISTANCE_SIMILARITY_LIMIT
+            <= HAMMING_DISTANCE_SIMILARITY_LIMIT
             && calculate_hamming_distance(self.phash, other.phash)
-                <= HAMMING_DISTANCE_SIMILARITY_LIMIT
+            <= HAMMING_DISTANCE_SIMILARITY_LIMIT
         {
             true
         } else {
@@ -130,7 +148,7 @@ pub trait PerceptualHash {
 // Functions //
 
 /**
- * Resonsible for parsing a path, converting an image and package it to be
+ * Responsible for parsing a path, converting an image and package it to be
  * hashed.
  *
  * # Arguments
@@ -234,9 +252,9 @@ pub fn get_perceptual_hashes(
     let phash = phash::PHash::new(&path, &precision, &cache).get_hash(&cache);
     PerceptualHashes {
         orig_path: String::from(&*image_path),
-        ahash: ahash,
-        dhash: dhash,
-        phash: phash,
+        ahash,
+        dhash,
+        phash,
     }
 }
 
@@ -249,4 +267,27 @@ pub fn calculate_hamming_distance(hash1: u64, hash2: u64) -> u64 {
     // the differences between the two hashes. All that's left is to count
     // the number of 1's in the difference to determine the hamming distance
     (hash1 ^ hash2).count_ones() as u64
+}
+
+#[cfg(test)]
+mod tests {
+    use hash::calculate_hamming_distance;
+
+    #[test]
+    fn test_no_hamming_distance() {
+        let hamming_distance = calculate_hamming_distance(0, 0);
+        assert_eq!(hamming_distance, 0);
+    }
+
+    #[test]
+    fn test_one_hamming_distance() {
+        let hamming_distance = calculate_hamming_distance(0, 1);
+        assert_eq!(hamming_distance, 1);
+    }
+
+    #[test]
+    fn test_two_hamming_distance() {
+        let hamming_distance = calculate_hamming_distance(0, 3);
+        assert_eq!(hamming_distance, 2);
+    }
 }

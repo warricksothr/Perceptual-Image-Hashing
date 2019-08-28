@@ -9,8 +9,9 @@ extern crate rustc_serialize;
 #[macro_use]
 extern crate serde_derive;
 
-use docopt::Docopt;
 use std::path::Path;
+
+use docopt::Docopt;
 
 // Getting the version information from cargo during compile time
 const VERSION: &'static str = env!("CARGO_PKG_VERSION");
@@ -139,8 +140,8 @@ fn get_requested_perceptual_hashes(
 
     pihash::hash::PerceptualHashes {
         orig_path: String::from(image_path.to_str().unwrap()),
-        ahash: ahash,
-        dhash: dhash,
-        phash: phash,
+        ahash,
+        dhash,
+        phash,
     }
 }

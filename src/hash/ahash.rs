@@ -6,10 +6,9 @@ use std::path::Path;
 
 use cache::Cache;
 
-use super::prepare_image;
 use super::{HashType, PerceptualHash, Precision, PreparedImage};
-
 use super::image::GenericImageView;
+use super::prepare_image;
 
 pub struct AHash {
     prepared_image: Box<PreparedImage>,
@@ -63,3 +62,6 @@ impl PerceptualHash for AHash {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {}
