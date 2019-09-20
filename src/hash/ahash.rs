@@ -6,24 +6,23 @@ use std::path::Path;
 
 use cache::Cache;
 
-use super::prepare_image;
 use super::{HashType, PerceptualHash, Precision, PreparedImage};
-
 use super::image::GenericImageView;
+use super::prepare_image;
 
-pub struct AHash<'a> {
-    prepared_image: Box<PreparedImage<'a>>,
+pub struct AHash {
+    prepared_image: Box<PreparedImage>,
 }
 
-impl<'a> AHash<'a> {
-    pub fn new(path: &'a Path, precision: &Precision, cache: &Option<Cache>) -> Self {
+impl AHash {
+    pub fn new(path: &Path, precision: &Precision, cache: &Option<Cache>) -> Self {
         AHash {
             prepared_image: Box::new(prepare_image(&path, &HashType::AHash, &precision, cache)),
         }
     }
 }
 
-impl<'a> PerceptualHash for AHash<'a> {
+impl PerceptualHash for AHash {
     /**
      * Calculate the ahash of the provided prepared image.
      *
@@ -63,3 +62,6 @@ impl<'a> PerceptualHash for AHash<'a> {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {}

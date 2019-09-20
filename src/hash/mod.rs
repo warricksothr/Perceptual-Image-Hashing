@@ -6,11 +6,16 @@
 extern crate dft;
 extern crate image;
 
-use self::image::FilterType;
-use cache::Cache;
 use std::f64;
 use std::fmt;
+use std::fmt::{Error, Formatter};
 use std::path::Path;
+
+use serde::export::fmt::Debug;
+
+use cache::Cache;
+
+use self::image::FilterType;
 
 mod ahash;
 mod dhash;
@@ -42,30 +47,45 @@ const HAMMING_DISTANCE_SIMILARITY_LIMIT: u64 = 5u64;
 /**
  * Prepared image that can be used to generate hashes
  */
-pub struct PreparedImage<'a> {
-    orig_path: &'a str,
+pub struct PreparedImage {
+    orig_path: String,
     image: Option<image::DynamicImage>,
 }
 
 /**
  * Wraps the various perceptual hashes
  */
-pub struct PerceptualHashes<'a> {
-    pub orig_path: &'a str,
+#[derive(Debug)]
+pub struct PerceptualHashes {
+    pub orig_path: String,
     pub ahash: u64,
     pub dhash: u64,
-    pub phash: u64,
+    pub phash: u64
 }
 
-impl<'a> PerceptualHashes<'a> {
-    pub fn similar(&self, other: &'a PerceptualHashes<'a>) -> bool {
+impl PartialEq for PerceptualHashes {
+    fn eq(&self, other: &Self) -> bool {
+        return self.ahash == other.ahash
+            && self.dhash == other.dhash
+            && self.phash == other.phash;
+    }
+
+    fn ne(&self, other: &Self) -> bool {
+        return self.ahash != other.ahash
+            || self.dhash != other.dhash
+            || self.phash != other.phash;
+    }
+}
+
+impl PerceptualHashes {
+    pub fn similar(&self, other: &PerceptualHashes) -> bool {
         if self.orig_path != other.orig_path
             && calculate_hamming_distance(self.ahash, other.ahash)
-                <= HAMMING_DISTANCE_SIMILARITY_LIMIT
+            <= HAMMING_DISTANCE_SIMILARITY_LIMIT
             && calculate_hamming_distance(self.dhash, other.dhash)
-                <= HAMMING_DISTANCE_SIMILARITY_LIMIT
+            <= HAMMING_DISTANCE_SIMILARITY_LIMIT
             && calculate_hamming_distance(self.phash, other.phash)
-                <= HAMMING_DISTANCE_SIMILARITY_LIMIT
+            <= HAMMING_DISTANCE_SIMILARITY_LIMIT
         {
             true
         } else {
@@ -81,7 +101,7 @@ impl<'a> PerceptualHashes<'a> {
  * Medium aims for 64 bit precision
  * High aims for 128 bit precision
  */
-#[allow(dead_code)]
+#[derive(Copy, Clone)]
 pub enum Precision {
     Low,
     Medium,
@@ -89,7 +109,6 @@ pub enum Precision {
 }
 
 // Get the size of the required image
-//
 impl Precision {
     fn get_size(&self) -> u32 {
         match *self {
@@ -103,6 +122,7 @@ impl Precision {
 /**
  * Types of hashes supported
  */
+#[derive(Copy, Clone)]
 pub enum HashType {
     AHash,
     DHash,
@@ -128,7 +148,7 @@ pub trait PerceptualHash {
 // Functions //
 
 /**
- * Resonsible for parsing a path, converting an image and package it to be
+ * Responsible for parsing a path, converting an image and package it to be
  * hashed.
  *
  * # Arguments
@@ -141,12 +161,12 @@ pub trait PerceptualHash {
  * A PreparedImage struct with the required information for performing hashing
  *
  */
-pub fn prepare_image<'a>(
-    path: &'a Path,
+pub fn prepare_image(
+    path: &Path,
     hash_type: &HashType,
     precision: &Precision,
     cache: &Option<Cache>,
-) -> PreparedImage<'a> {
+) -> PreparedImage {
     let image_path = path.to_str().unwrap();
     let size: u32 = match *hash_type {
         HashType::PHash => precision.get_size() * 4,
@@ -154,10 +174,10 @@ pub fn prepare_image<'a>(
     };
     // Check if we have the already converted image in a cache and use that if possible.
     match *cache {
-        Some(ref c) => {
-            match c.get_image_from_cache(&path, size) {
+        Some(ref cache) => {
+            match cache.get_image_from_cache(&path, size) {
                 Some(image) => PreparedImage {
-                    orig_path: &*image_path,
+                    orig_path: String::from(&*image_path),
                     image: Some(image),
                 },
                 None => {
@@ -165,7 +185,7 @@ pub fn prepare_image<'a>(
                     // Oh, and save it in a cache
                     match processed_image.image {
                         Some(ref image) => {
-                            match c.put_image_in_cache(&path, size, &image) {
+                            match cache.put_image_in_cache(&path, size, &image) {
                                 Ok(_) => {}
                                 Err(e) => println!("Unable to store image in cache. {}", e),
                             };
@@ -197,7 +217,7 @@ fn process_image(image_path: &str, size: u32) -> PreparedImage {
         }
     };
     PreparedImage {
-        orig_path: &*image_path,
+        orig_path: String::from(&*image_path),
         image,
     }
 }
@@ -205,8 +225,8 @@ fn process_image(image_path: &str, size: u32) -> PreparedImage {
 /**
  * Get a specific HashType hash
  */
-pub fn get_perceptual_hash<'a>(
-    path: &'a Path,
+pub fn get_perceptual_hash(
+    path: &Path,
     precision: &Precision,
     hash_type: &HashType,
     cache: &Option<Cache>,
@@ -221,20 +241,20 @@ pub fn get_perceptual_hash<'a>(
 /**
  * Get all perceptual hashes for an image
  */
-pub fn get_perceptual_hashes<'a>(
-    path: &'a Path,
+pub fn get_perceptual_hashes(
+    path: &Path,
     precision: &Precision,
     cache: &Option<Cache>,
-) -> PerceptualHashes<'a> {
+) -> PerceptualHashes {
     let image_path = path.to_str().unwrap();
     let ahash = ahash::AHash::new(&path, &precision, &cache).get_hash(&cache);
     let dhash = dhash::DHash::new(&path, &precision, &cache).get_hash(&cache);
     let phash = phash::PHash::new(&path, &precision, &cache).get_hash(&cache);
     PerceptualHashes {
-        orig_path: &*image_path,
-        ahash: ahash,
-        dhash: dhash,
-        phash: phash,
+        orig_path: String::from(&*image_path),
+        ahash,
+        dhash,
+        phash,
     }
 }
 
@@ -247,4 +267,27 @@ pub fn calculate_hamming_distance(hash1: u64, hash2: u64) -> u64 {
     // the differences between the two hashes. All that's left is to count
     // the number of 1's in the difference to determine the hamming distance
     (hash1 ^ hash2).count_ones() as u64
+}
+
+#[cfg(test)]
+mod tests {
+    use hash::calculate_hamming_distance;
+
+    #[test]
+    fn test_no_hamming_distance() {
+        let hamming_distance = calculate_hamming_distance(0, 0);
+        assert_eq!(hamming_distance, 0);
+    }
+
+    #[test]
+    fn test_one_hamming_distance() {
+        let hamming_distance = calculate_hamming_distance(0, 1);
+        assert_eq!(hamming_distance, 1);
+    }
+
+    #[test]
+    fn test_two_hamming_distance() {
+        let hamming_distance = calculate_hamming_distance(0, 3);
+        assert_eq!(hamming_distance, 2);
+    }
 }

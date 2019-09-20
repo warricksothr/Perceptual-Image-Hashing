@@ -6,25 +6,25 @@ use std::path::Path;
 
 use cache::Cache;
 
+use super::{HashType, PerceptualHash, Precision, PreparedImage};
 use super::dft;
 use super::dft::Transform;
 use super::image::{DynamicImage, GenericImageView, Pixel};
 use super::prepare_image;
-use super::{HashType, PerceptualHash, Precision, PreparedImage};
 
-pub struct PHash<'a> {
-    prepared_image: Box<PreparedImage<'a>>,
+pub struct PHash {
+    prepared_image: Box<PreparedImage>,
 }
 
-impl<'a> PHash<'a> {
-    pub fn new(path: &'a Path, precision: &Precision, cache: &Option<Cache>) -> Self {
+impl PHash {
+    pub fn new(path: &Path, precision: &Precision, cache: &Option<Cache>) -> Self {
         PHash {
             prepared_image: Box::new(prepare_image(&path, &HashType::PHash, &precision, cache)),
         }
     }
 }
 
-impl<'a> PerceptualHash for PHash<'a> {
+impl PerceptualHash for PHash {
     /**
      * Calculate the phash of the provided prepared image
      *
@@ -41,18 +41,18 @@ impl<'a> PerceptualHash for PHash<'a> {
                 // Get 2d data to 2d FFT/DFT
                 // Either from the cache or calculate it
                 // Pretty fast already, so caching doesn't make a huge difference
-                // Atleast compared to opening and processing the images
+                // At least compared to opening and processing the images
                 let data_matrix: Vec<Vec<f64>> = match *cache {
                     Some(ref c) => {
                         match c.get_matrix_from_cache(
-                            &Path::new(self.prepared_image.orig_path),
+                            &Path::new(&self.prepared_image.orig_path),
                             width as u32,
                         ) {
                             Some(matrix) => matrix,
                             None => {
                                 let matrix = create_data_matrix(width, height, &image);
                                 match c.put_matrix_in_cache(
-                                    &Path::new(self.prepared_image.orig_path),
+                                    &Path::new(&self.prepared_image.orig_path),
                                     width as u32,
                                     &matrix,
                                 ) {
@@ -117,11 +117,11 @@ fn create_data_matrix(width: u32, height: u32, image: &DynamicImage) -> Vec<Vec<
     data_matrix
 }
 
-// Use a 1D DFT to cacluate the 2D DFT.
+// Use a 1D DFT to calcuate the 2D DFT.
 //
 // This is achieved by calculating the DFT for each row, then calculating the
 // DFT for each column of DFT row data. This means that a 32x32 image with have
-// 1024 1D DFT operations performed on it. (Slightly caclulation intensive)
+// 1024 1D DFT operations performed on it. (Slightly calculation intensive)
 //
 // This operation is in place on the data in the provided vector
 //
@@ -189,44 +189,51 @@ fn round_float(f: f64) -> f64 {
     }
 }
 
-#[test]
-fn test_2d_dft() {
-    let mut test_matrix: Vec<Vec<f64>> = Vec::new();
-    test_matrix.push(vec![1f64, 1f64, 1f64, 3f64]);
-    test_matrix.push(vec![1f64, 2f64, 2f64, 1f64]);
-    test_matrix.push(vec![1f64, 2f64, 2f64, 1f64]);
-    test_matrix.push(vec![3f64, 1f64, 1f64, 1f64]);
+#[cfg(test)]
+mod tests {
+    use hash::phash::calculate_2d_dft;
 
-    println!("{:?}", test_matrix[0]);
-    println!("{:?}", test_matrix[1]);
-    println!("{:?}", test_matrix[2]);
-    println!("{:?}", test_matrix[3]);
+    #[test]
+    fn test_2d_dft() {
+        let mut test_matrix: Vec<Vec<f64>> = Vec::new();
+        test_matrix.push(vec![1f64, 1f64, 1f64, 3f64]);
+        test_matrix.push(vec![1f64, 2f64, 2f64, 1f64]);
+        test_matrix.push(vec![1f64, 2f64, 2f64, 1f64]);
+        test_matrix.push(vec![3f64, 1f64, 1f64, 1f64]);
 
-    println!("Performing 2d DFT");
-    calculate_2d_dft(&mut test_matrix);
+        println!("2d matrix before DFT");
+        println!("{:?}", test_matrix[0]);
+        println!("{:?}", test_matrix[1]);
+        println!("{:?}", test_matrix[2]);
+        println!("{:?}", test_matrix[3]);
 
-    println!("{:?}", test_matrix[0]);
-    println!("{:?}", test_matrix[1]);
-    println!("{:?}", test_matrix[2]);
-    println!("{:?}", test_matrix[3]);
+        println!("Performing 2d DFT");
+        calculate_2d_dft(&mut test_matrix);
 
-    assert!(test_matrix[0][0] == 24_f64);
-    assert!(test_matrix[0][1] == 0_f64);
-    assert!(test_matrix[0][2] == 0_f64);
-    assert!(test_matrix[0][3] == 0_f64);
+        println!("2d matrix after DFT");
+        println!("{:?}", test_matrix[0]);
+        println!("{:?}", test_matrix[1]);
+        println!("{:?}", test_matrix[2]);
+        println!("{:?}", test_matrix[3]);
 
-    assert!(test_matrix[1][0] == 0_f64);
-    assert!(test_matrix[1][1] == 0_f64);
-    assert!(test_matrix[1][2] == -2_f64);
-    assert!(test_matrix[1][3] == 2_f64);
+        assert_eq!(test_matrix[0][0], 24_f64);
+        assert_eq!(test_matrix[0][1], 0_f64);
+        assert_eq!(test_matrix[0][2], 0_f64);
+        assert_eq!(test_matrix[0][3], 0_f64);
 
-    assert!(test_matrix[2][0] == 0_f64);
-    assert!(test_matrix[2][1] == -2_f64);
-    assert!(test_matrix[2][2] == -4_f64);
-    assert!(test_matrix[2][3] == -2_f64);
+        assert_eq!(test_matrix[1][0], 0_f64);
+        assert_eq!(test_matrix[1][1], 0_f64);
+        assert_eq!(test_matrix[1][2], -2_f64);
+        assert_eq!(test_matrix[1][3], 2_f64);
 
-    assert!(test_matrix[3][0] == 0_f64);
-    assert!(test_matrix[3][1] == 2_f64);
-    assert!(test_matrix[3][2] == -2_f64);
-    assert!(test_matrix[3][3] == 0_f64);
+        assert_eq!(test_matrix[2][0], 0_f64);
+        assert_eq!(test_matrix[2][1], -2_f64);
+        assert_eq!(test_matrix[2][2], -4_f64);
+        assert_eq!(test_matrix[2][3], -2_f64);
+
+        assert_eq!(test_matrix[3][0], 0_f64);
+        assert_eq!(test_matrix[3][1], 2_f64);
+        assert_eq!(test_matrix[3][2], -2_f64);
+        assert_eq!(test_matrix[3][3], 0_f64);
+    }
 }

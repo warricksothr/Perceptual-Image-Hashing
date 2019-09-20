@@ -9,7 +9,7 @@ extern crate num;
 extern crate sha1;
 
 use std::default::Default;
-use std::fs::{create_dir_all, remove_dir_all, File};
+use std::fs::{create_dir_all, File, remove_dir_all};
 use std::io::{Error, ErrorKind, Read, Write};
 use std::option::Option;
 use std::path::Path;
@@ -18,9 +18,9 @@ use std::str::FromStr;
 
 use super::rustc_serialize::json;
 
+use self::flate2::Compression;
 use self::flate2::read::ZlibDecoder;
 use self::flate2::write::ZlibEncoder;
-use self::flate2::Compression;
 use self::image::DynamicImage;
 use self::sha1::Sha1;
 
@@ -58,26 +58,26 @@ impl PartialEq<CacheMetadata> for CacheMetadata {
 * Structure to hold implementation of the cache
 */
 #[repr(C)]
-pub struct Cache<'a> {
-    pub cache_dir: &'a str,
+pub struct Cache {
+    pub cache_dir: String,
     pub use_cache: bool,
 }
 
-impl<'a> Default for Cache<'a> {
-    fn default() -> Cache<'a> {
+impl Default for Cache {
+    fn default() -> Cache {
         Cache {
-            cache_dir: DEFAULT_CACHE_DIR,
+            cache_dir: String::from(DEFAULT_CACHE_DIR),
             use_cache: true,
         }
     }
 }
 
-impl<'a> Cache<'a> {
+impl Cache {
     /**
      * Create the required directories for the cache
      */
     pub fn init(&self) -> Result<(), Error> {
-        match create_dir_all(self.cache_dir) {
+        match create_dir_all(&self.cache_dir) {
             Ok(_) => {
                 let metadata_path_str = format!("{}/{}", self.cache_dir, CACHE_METADATA_FILE);
                 let metadata_path = Path::new(&metadata_path_str);
@@ -97,8 +97,8 @@ impl<'a> Cache<'a> {
                                 // If they match, continue
                                 if current_metadata != loaded_metadata {
                                     // If they don't wipe the cache to start new
-                                    match remove_dir_all(self.cache_dir) {
-                                        Ok(_) => match create_dir_all(self.cache_dir) {
+                                    match remove_dir_all(&self.cache_dir) {
+                                        Ok(_) => match create_dir_all(&self.cache_dir) {
                                             Ok(_) => (),
                                             Err(e) => println!("Error: {}", e),
                                         },
@@ -130,14 +130,14 @@ impl<'a> Cache<'a> {
      * Clean the cache directory completely
      */
     pub fn clean(&self) -> Result<(), Error> {
-        remove_dir_all(self.cache_dir)
+        remove_dir_all(&self.cache_dir)
     }
 
     /**
      * Get the hash of the desired file and return it as a hex string
      */
     pub fn get_file_hash(&self, path: &Path) -> Result<String, Error> {
-        let mut source = try!(File::open(&path));
+        let mut source = File::open(&path)?;
         let mut buf: Vec<u8> = Vec::new();
         source.read_to_end(&mut buf)?;
         let mut sha1 = Sha1::new();
@@ -170,8 +170,11 @@ impl<'a> Cache<'a> {
                 );
                 let cache_dir_str =
                     format!("{}/image/{}x{}/{}", self.cache_dir, size, size, &sha1[..10]);
-                // println!("Saving: {}", cache_path_str);
-                match create_dir_all(cache_dir_str) {
+                println!("Test");
+                println!("{}", DEFAULT_CACHE_DIR);
+                println!("{}", &self.cache_dir);
+                //                println!("Saving: {}", &cache_path_str);
+                match create_dir_all(&cache_dir_str) {
                     Ok(_) => {
                         let file_path = Path::new(&cache_path_str);
                         match File::create(file_path) {
@@ -185,10 +188,16 @@ impl<'a> Cache<'a> {
                                     }
                                 }
                             }
-                            Err(e) => return Err(e),
+                            Err(e) => {
+                                println!("Unable to create file {:?}", file_path);
+                                return Err(e);
+                            }
                         }
                     }
-                    Err(e) => return Err(e),
+                    Err(e) => {
+                        println!("Unable to create directory {:?}", &cache_dir_str);
+                        return Err(e);
+                    }
                 }
             }
             Err(e) => {
@@ -284,7 +293,7 @@ impl<'a> Cache<'a> {
                                     let desire_len = row_str.len() - 1;
                                     row_str.truncate(desire_len);
                                     row_str.push_str("\n");
-                                    try!(compressor.write(&row_str.into_bytes()));
+                                    compressor.write(&row_str.into_bytes())?;
                                 }
                                 let compressed_matrix = match compressor.finish() {
                                     Ok(data) => data,
@@ -293,8 +302,8 @@ impl<'a> Cache<'a> {
                                         return Err(e);
                                     }
                                 };
-                                try!(file.write(&compressed_matrix));
-                                try!(file.flush());
+                                file.write(&compressed_matrix)?;
+                                file.flush()?;
                             }
                             Err(e) => {
                                 return Err(e);
@@ -370,20 +379,27 @@ impl<'a> Cache<'a> {
     }
 }
 
-#[test]
-fn test_get_file_hash() {
-    let target = "test_images/sample_01_large.jpg";
-    let target_path = Path::new(target);
-    let cache: Cache = Default::default();
-    let hash = cache.get_file_hash(&target_path);
-    match hash {
-        Ok(v) => {
-            println!("Hash: {}", v);
-            assert_eq!(v, String::from("4beb6f2d852b75a313863916a1803ebad13a3196"));
-        }
-        Err(e) => {
-            println!("Error: {:?}", e);
-            assert!(false);
+#[cfg(test)]
+mod tests {
+    use std::path::Path;
+
+    use cache::Cache;
+
+    #[test]
+    fn test_get_file_hash() {
+        let target = "test_images/sample_01_large.jpg";
+        let target_path = Path::new(target);
+        let cache: Cache = Default::default();
+        let hash = cache.get_file_hash(&target_path);
+        match hash {
+            Ok(v) => {
+                println!("Hash: {}", v);
+                assert_eq!(v, String::from("4beb6f2d852b75a313863916a1803ebad13a3196"));
+            }
+            Err(e) => {
+                println!("Error: {:?}", e);
+                assert!(false);
+            }
         }
     }
 }

@@ -2,7 +2,6 @@
 
 from ctypes import *
 from sys import exit, platform
-import os
 
 large_image1_path = "../test_images/sample_01_large.jpg".encode(encoding="utf-8")
 medium_image1_path = "../test_images/sample_01_medium.jpg".encode(encoding="utf-8")
@@ -57,6 +56,7 @@ class PIHashes(Structure):
 # Setting the ctypes return type references for the foreign functions
 # returns a pointer to the library that we'll need to pass to all function calls
 lib.ext_init.restype = c_void_p
+lib.ext_init.argtypes = [c_char_p]
 # Returns a longlong hash, takes a pointer and a string
 lib.ext_get_ahash.restype = c_ulonglong
 lib.ext_get_ahash.argtypes = [c_void_p, c_char_p]
@@ -64,14 +64,14 @@ lib.ext_get_dhash.restype = c_ulonglong
 lib.ext_get_dhash.argtypes = [c_void_p, c_char_p]
 lib.ext_get_phash.restype = c_ulonglong
 lib.ext_get_phash.argtypes = [c_void_p, c_char_p]
-lib.ext_get_phashes.restype = c_void_p
-lib.ext_get_phashes.argtypes = [c_void_p, c_char_p]
-lib.ext_free_phashes.argtypes = [c_void_p]
+lib.ext_get_pihashes.restype = c_void_p
+lib.ext_get_pihashes.argtypes = [c_void_p, c_char_p]
+lib.ext_free_pihashes.argtypes = [c_void_p]
 # Takes a pointer and frees the struct at that memory location
 lib.ext_free.argtypes = [c_void_p]
 
 #initialize the library
-lib_struct = lib.ext_init("./.hash_cache".encode(encoding="utf-8"))
+lib_struct = lib.ext_init("./.hash_cache".encode('utf-8'))
 
 #print("Pointer to lib_struct: ", lib_struct)
 
@@ -81,9 +81,9 @@ lib_struct = lib.ext_init("./.hash_cache".encode(encoding="utf-8"))
 
 for image in test_images:
 	print("Requesting hashes for: %s"% image)
-	phashes = lib.ext_get_phashes(lib_struct, image)
+    phashes = lib.ext_get_pihashes(lib_struct, image)
 	pihashes = PIHashes.from_address(phashes)
-	lib.ext_free_phashes(phashes)
+    lib.ext_free_pihashes(phashes)
 	print("ahash: %i"% unsigned64(pihashes.ahash))
 	print("dhash: %i"% unsigned64(pihashes.dhash))
 	print("phash: %i"% unsigned64(pihashes.phash))
