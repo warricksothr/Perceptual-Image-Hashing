@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from ctypes import *
+from sys import exit, platform
 import os
 
 large_image1_path = "../test_images/sample_01_large.jpg".encode(encoding="utf-8")
@@ -33,12 +34,17 @@ print("starting ffi test")
 
 # Load the shared library
 lib = None
-if os.name == 'nt':
+if platform == 'win32':
 	path = os.path.dirname(__file__) + "\\pihash.dll"
 	print(path)
 	lib = CDLL(path)
-else:
+elif platform == 'darwin':
+	lib = cdll.LoadLibrary("libpihash.dylib")
+elif platform == 'linux' or platform == 'linux2':
 	lib = cdll.LoadLibrary("libpihash.so")
+else:
+	print('Unrecognized platform ', platform)
+	sys.exit(-1)
 
 
 class PIHashes(Structure):
